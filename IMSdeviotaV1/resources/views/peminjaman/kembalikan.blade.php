@@ -194,8 +194,32 @@
     </div>
 
     <!-- Notifikasi Sukses -->
-     
+    @if (session('success'))
+    <div class="overlay" id="popupOverlay"></div>
+        <div class="popup-success" id="popupSuccess">
+            <p>{{ session('success') }} ✅</p>
+            <button onclick="closeSuccess()">Ok</button>
+        </div>
 
+    <script>
+        function closeSuccess() {
+            const popup = document.getElementById('popupSuccess');
+            const overlay = document.getElementById('popupOverlay');
+            if (popup) popup.style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+            
+            // Redirect to home after closing the popup
+            window.location.href = "{{ route('welcome') }}";
+        }
+
+        // Tutup popup setelah 3 detik, lalu redirect ke home
+        setTimeout(() => {
+            closeSuccess();
+        }, 10000); // 10 detik
+    </script>
+    @endif
+
+     
     <div class="content">
         <div class="left">
             @foreach($peminjaman as $pinjam)
@@ -237,8 +261,7 @@
                     
                     <button type="submit" class="btn-kembalikan-semua"
                         onclick="return confirm('Yakin ingin mengembalikan semua barang?')">
-                        Kembalikan Semua ({{ $peminjaman->where('status', 'Dipinjam')->count() }})
-                    </button>
+                        Kembalikan Semua
                 </form>
             @endif
         </div>   

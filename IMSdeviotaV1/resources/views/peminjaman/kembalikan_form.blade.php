@@ -3,7 +3,7 @@
 <head>
     @vite(['resources/js/app.js'])
     <meta charset="UTF-8">
-    <title>Document</title>
+    <title>Form Kembalikan</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
 

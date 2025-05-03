@@ -227,77 +227,46 @@ class PeminjamanController extends Controller
         return redirect()->route('peminjaman.kembalikanForm', [
             'nama_mahasiswa' => $mahasiswa->nama_mahasiswa,
             'nim' => $mahasiswa->nim,
-        ])->with('success', 'Berhasil mengembalikan semua barang (' . $totalItemDikembalikan . ' item)');
+        ])->with('success', 'Berhasil Mengembalikan Semua item');   
     }
-
-    // public function prosesKembalikan(Request $request, $id)
-    // {
-        
-    //     $peminjaman = Peminjaman::with('mahasiswa')->findOrFail($id);
-
-    //     $request->validate([
-    //         'jumlah_kembalikan' => 'required|numeric|min:1|max:'.$peminjaman->jumlah
-    //     ]);
-
-    //     $barang = Barang::findOrFail($peminjaman->id_barang);
-    //     $jumlahKembalikan = $request->jumlah_kembalikan;
-
-    //     // 1. Update stok barang
-    //     $barang->stok += $jumlahKembalikan;
-    //     $barang->save();
-
-    //     // 2. Update sisa peminjaman
-    //     $peminjaman->jumlah -= $jumlahKembalikan;
-
-    //     // 3. Jika sudah dikembalikan semua, ubah status
-    //     if ($peminjaman->jumlah == 0) {
-    //         $peminjaman->status = 'Dikembalikan';
-    //         $peminjaman->tanggal_kembali = now();
-    //     }
-
-    //     $peminjaman->save();    
-
-    //     return redirect()->back()->with('success', 'Berhasil mengembalikan '.$jumlahKembalikan.' item');
-    // }
 
     public function prosesKembalikan(Request $request, $id)
-{
-    $peminjaman = Peminjaman::with('mahasiswa')->findOrFail($id);
+    {
+        $peminjaman = Peminjaman::with('mahasiswa')->findOrFail($id);
 
-    $request->validate([
-        'jumlah_kembalikan' => 'required|numeric|min:1|max:' . $peminjaman->jumlah
-    ]);
+        $request->validate([
+            'jumlah_kembalikan' => 'required|numeric|min:1|max:' . $peminjaman->jumlah
+        ]);
 
-    $barang = Barang::findOrFail($peminjaman->id_barang);
-    $jumlahKembalikan = $request->jumlah_kembalikan;
+        $barang = Barang::findOrFail($peminjaman->id_barang);
+        $jumlahKembalikan = $request->jumlah_kembalikan;
 
-    // Update stok barang
-    $barang->stok += $jumlahKembalikan;
-    $barang->save();
+        // Update stok barang
+        $barang->stok += $jumlahKembalikan;
+        $barang->save();
 
-    // Update jumlah di peminjaman
-    $peminjaman->jumlah -= $jumlahKembalikan;
+        // Update jumlah di peminjaman
+        $peminjaman->jumlah -= $jumlahKembalikan;
 
-    if ($peminjaman->jumlah == 0) {
-        $peminjaman->status = 'Dikembalikan';
-        $peminjaman->tanggal_kembali = now();
+        if ($peminjaman->jumlah == 0) {
+            $peminjaman->status = 'Dikembalikan';
+            $peminjaman->tanggal_kembali = now();
+        }
+
+        $peminjaman->save();
+
+        // Ambil ulang semua data peminjaman & mahasiswa (tanpa redirect)
+        $mahasiswa = $peminjaman->mahasiswa;
+        $peminjamanAll = Peminjaman::with('barang')
+            ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
+            ->where('status', '!=', 'Dikembalikan')
+            ->get();
+
+        return view('peminjaman.kembalikan', [
+            'peminjaman' => $peminjamanAll,
+            'mahasiswa' => $mahasiswa,
+        ])->with('success', 'Berhasil Mengembalikan Item'); 
     }
-
-    $peminjaman->save();
-
-    // ✅ Ambil ulang semua data peminjaman & mahasiswa (tanpa redirect)
-    $mahasiswa = $peminjaman->mahasiswa;
-    $peminjamanAll = Peminjaman::with('barang')
-        ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
-        ->where('status', '!=', 'Dikembalikan')
-        ->get();
-
-    return view('peminjaman.kembalikan', [
-        'peminjaman' => $peminjamanAll,
-        'mahasiswa' => $mahasiswa,
-        'success' => 'Berhasil mengembalikan ' . $jumlahKembalikan . 'item'
-    ]);
-}
 
     public function show_riwayat_peminjaman(Request $request) 
     {
@@ -352,4 +321,28 @@ class PeminjamanController extends Controller
 
         return $pdf->download('rekap_peminjaman.pdf');
     }
+
+    // Tambah jumlah
+    public function update(Request $request)
+    {
+        $id = $request->id_barang;
+        $jumlah = $request->jumlah;
+
+        $cart = session('cart', []);
+
+        if ($jumlah > 0) {
+            $cart[$id] = [
+                'id_barang' => $id,
+                'jumlah' => $jumlah
+            ];
+        } else {
+            unset($cart[$id]);
+        }
+
+        session(['cart' => $cart]);
+
+        return response()->json(['message' => 'Cart updated']);
+    }
+
+
 }

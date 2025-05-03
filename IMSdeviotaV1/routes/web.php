@@ -86,3 +86,6 @@ Route::resource('mahasiswa', MahasiswaController::class);
 // ADMIN LOGIN
 Route::get('/admin/login', [AdminController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login.submit');
+
+// KERANJANG
+Route::post('/keranjang/update', [KeranjangController::class, 'update'])->name('keranjang.update');
