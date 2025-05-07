@@ -54,10 +54,13 @@ Route::resource('mahasiswa', MahasiswaController::class);
     Route::get('/peminjaman/kembalikan', function () {return view('peminjaman.kembalikan_form');})->name('peminjaman.kembalikanForm');
     Route::post('/peminjaman/kembalikan-semua', [PeminjamanController::class, 'kembalikanSemuaBarang'])->name('peminjaman.kembalikanSemuaBarang');
     
+
+    
     // Peminjaman barang yang FIX
     Route::get('/listbarang', [PeminjamanController::class, 'listBarang'])->name('listbarang');
     Route::get('/keranjang', [PeminjamanController::class, 'showKeranjang'])->name('keranjang');
     Route::post('/keranjang', [PeminjamanController::class, 'submitPeminjaman'])->name('submit.peminjaman');
+    Route::get('/keranjang/updateKeranjang', [PeminjamanController::class, 'update'])->name('peminjaman.update');
     
     // ADMIN OPERATION
     Route::get('/riwayat_peminjaman', [PeminjamanController::class, 'show_riwayat_peminjaman'])->name('admin/peminjaman.index');
@@ -86,6 +89,3 @@ Route::resource('mahasiswa', MahasiswaController::class);
 // ADMIN LOGIN
 Route::get('/admin/login', [AdminController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login.submit');
-
-// KERANJANG
-Route::post('/keranjang/update', [KeranjangController::class, 'update'])->name('keranjang.update');

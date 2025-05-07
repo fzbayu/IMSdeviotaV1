@@ -237,6 +237,13 @@
             height: 20px; 
             margin-right: 5px; 
         }
+
+        .produk-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+
     </style>
 </head>
 <body>

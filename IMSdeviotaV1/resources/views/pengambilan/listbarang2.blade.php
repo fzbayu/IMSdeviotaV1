@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-@vite(['resources/js/app.js'])
+    @vite(['resources/js/app.js'])
     <meta charset="UTF-8">
     <title>List Barang</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -20,7 +21,7 @@
         }
 
         .header {
-            background: linear-gradient(to bottom, #6554C4,rgb(233, 216, 255));
+            background: linear-gradient(to bottom, #6554C4, rgb(233, 216, 255));
             color: white;
             padding: 20px 40px;
             display: flex;
@@ -63,12 +64,12 @@
         }
 
         .filter-bar select {
-            appearance: none; 
+            appearance: none;
             background-image: url("images/dropdown.png");
             background-repeat: no-repeat;
             background-position: right 12px center;
             background-size: 10px 6px;
-            padding-right: 20px; 
+            padding-right: 20px;
         }
 
         .search-wrapper {
@@ -78,7 +79,8 @@
 
         .search-wrapper input[type="text"] {
             width: 100%;
-            padding: 10px 40px 10px 15px; /* ruang untuk ikon di kanan */
+            padding: 10px 40px 10px 15px;
+            /* ruang untuk ikon di kanan */
             font-size: 16px;
         }
 
@@ -181,20 +183,25 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
-        
+
         .btn-home .btn-icon {
-            width: 21px; /* Kecilkan gambar sesuai kebutuhan */
-            height: 21px; /* Sesuaikan ukuran */
+            width: 21px;
+            /* Kecilkan gambar sesuai kebutuhan */
+            height: 21px;
+            /* Sesuaikan ukuran */
         }
 
         .btn-cart {
-            width: 21px; /* Kecilkan gambar sesuai kebutuhan */
-            height: 21px; /* Sesuaikan ukuran */
+            width: 21px;
+            /* Kecilkan gambar sesuai kebutuhan */
+            height: 21px;
+            /* Sesuaikan ukuran */
         }
 
         .button-group {
             display: flex;
-            gap: 10px; /* jarak antar tombol */
+            gap: 10px;
+            /* jarak antar tombol */
         }
 
         .section-title {
@@ -214,14 +221,15 @@
 
         .barang {
             background-color: #e5e5e5;
-            min-width: 250px; /* atau sesuai ukuran yang kamu mau */
+            min-width: 250px;
+            /* atau sesuai ukuran yang kamu mau */
             flex-shrink: 0;
             padding: 15px;
             border-radius: 20px;
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.20);
             text-align: center;
         }
-        
+
         .produk-image {
             width: 100%;
             height: 150px;
@@ -229,7 +237,7 @@
             padding: 10px;
             background-color: white;
         }
-        
+
         .stok-display {
             text-align: center;
             padding: 2px;
@@ -250,7 +258,8 @@
             background: transparent;
             color: white;
             border: none;
-            font-size: 24px; /* Perbesar ukuran tombol */
+            font-size: 24px;
+            /* Perbesar ukuran tombol */
             font-weight: bold;
             cursor: pointer;
         }
@@ -262,6 +271,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- Header List Barang -->
@@ -284,9 +294,9 @@
         <select name="kategori">
             <option value="">Filter : Kategori</option>
             @foreach ($kategori as $k)
-                <option value="{{ $k->id_kategori }}" {{ request('kategori') == $k->id_kategori ? 'selected' : '' }}>
-                    {{ $k->nama_kategori }}
-                </option>
+            <option value="{{ $k->id_kategori }}" {{ request('kategori') == $k->id_kategori ? 'selected' : '' }}>
+                {{ $k->nama_kategori }}
+            </option>
             @endforeach
         </select>
         <button type="submit">Search</button>
@@ -295,16 +305,22 @@
     <!-- List barang -->
     <div class="produk-container">
         @foreach ($barang as $b)
-            <div class="barang" data-id="{{ $b->id_barang }}" data-stok="{{ $b->stok }}">
-                <h4>{{ $b->nama_barang }}</h4>
-                <img class="produk-image" src="{{ asset('storage/' . $b->gambar) }}" width="100">
-                <p>Stok: <span class="stok-display">{{ $b->stok }}</span></p>
-                <div class="counter">
-                    <button class="kurang">-</button>
-                    <span class="jumlah">0</span>
-                    <button class="tambah">+</button>
-                </div>
+        <div class="barang" data-id="{{ $b->id_barang }}" data-stok="{{ $b->stok }}">
+            <h4>{{ $b->nama_barang }}</h4>
+
+            @if($b->foto->count() > 0)
+            <img class="produk-image" src="{{ asset('storage/' . $b->foto->first()->foto) }}" width="100">
+            @else
+            <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+            @endif
+
+            <p>Stok: <span class="stok-display">{{ $b->stok }}</span></p>
+            <div class="counter">
+                <button class="kurang">-</button>
+                <span class="jumlah">0</span>
+                <button class="tambah">+</button>
             </div>
+        </div>
         @endforeach
     </div>
 
@@ -317,8 +333,9 @@
                 Ambil: <span id="total-pinjam">0</span>
             </button>
         </form>
-    </div> 
+    </div>
 
-</div>
+    </div>
 </body>
+
 </html>

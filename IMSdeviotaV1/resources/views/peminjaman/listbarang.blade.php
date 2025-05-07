@@ -223,9 +223,9 @@
         }
         
         .produk-image {
-            width: 100%;
+            width: 150px;
             height: 150px;
-            object-fit: contain;
+            object-fit: cover;
             padding: 10px;
             background-color: white;
         }
@@ -297,7 +297,11 @@
         @foreach ($barang as $b)
             <div class="barang" data-id="{{ $b->id_barang }}" data-stok="{{ $b->stok }}">
                 <h4>{{ $b->nama_barang }}</h4>
-                <img class="produk-image" src="{{ asset('storage/' . $b->gambar) }}" width="100">
+                @if($b->foto->count() > 0)
+                    <img class="produk-image" src="{{ asset('storage/' . $b->foto->first()->foto) }}" width="100">
+                @else
+                    <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+                @endif
                 <p>Stok: <span class="stok-display">{{ $b->stok }}</span></p>
                 <div class="counter">
                     <button class="kurang">-</button>

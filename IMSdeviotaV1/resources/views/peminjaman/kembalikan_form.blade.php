@@ -230,14 +230,43 @@
             width: 100%;
         }   
 
+        /* Untuk Notifikasi */
         .overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5); /* efek gelap */
-            z-index: 999; /* satu level di bawah popup */
+            background-color: rgba(0, 0, 0, 0.5);
+            /* efek gelap */
+            z-index: 999;
+        }
+
+        .popup-success {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f0fff4;
+            color: #2e7d32;
+            padding: 30px 40px;
+            border-radius: 16px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            font-weight: bold;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .popup-success button {
+            margin-top: 20px;
+            padding: 10px 24px;
+            border: none;
+            background-color: #6554C4;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -254,6 +283,32 @@
             <a href="{{ route('welcome') }}" class="btn-back">Back</a>
         </div>
     </div>
+
+    <!-- Notifikasi Sukses -->
+    @if (session('success'))
+    <div class="overlay" id="popupOverlay"></div>
+    <div class="popup-success" id="popupSuccess">
+        <p>{{ session('success') }} ✅</p>
+        <button onclick="closeSuccess()">Ok</button>
+    </div>
+
+    <script>
+        function closeSuccess() {
+            const popup = document.getElementById('popupSuccess');
+            const overlay = document.getElementById('popupOverlay');
+            if (popup) popup.style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+
+            // Redirect to home after closing the popup
+            window.location.href = "{{ route('welcome') }}";
+        }
+
+        // Tutup popup setelah 3 detik, lalu redirect ke home
+        setTimeout(() => {
+            closeSuccess();
+        }, 10000); // 10 detik
+    </script>
+    @endif
     
     <!-- Untuk Handling error ketika Data tidak ditemukan -->
     @if ($errors->has('not_found'))

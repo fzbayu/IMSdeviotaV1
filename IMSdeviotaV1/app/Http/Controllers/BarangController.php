@@ -116,6 +116,7 @@ class BarangController extends Controller
             'tipe' => 'required|in:Barang Dipinjam,Barang Diambil',
             'stok_minimum' => 'nullable|integer',
             'harga' => 'required|numeric',
+            'foto_baru.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -134,6 +135,29 @@ class BarangController extends Controller
                     'jumlah' => $stokMasuk,
                     'tanggal_masuk' => now()
                 ]);
+            }
+            
+            // Hapus foto yang dicentang
+            if ($request->has('hapus_foto')) {
+                foreach ($request->hapus_foto as $fotoId) {
+                    $foto = Foto::findOrFail($fotoId);
+                    if (Storage::exists('public/' . $foto->foto)) {
+                        Storage::delete('public/' . $foto->foto);
+                    }
+                    $foto->delete();
+                }
+            }
+            
+            // Tambah foto baru
+            if ($request->hasFile('foto_baru')) {
+                foreach ($request->file('foto_baru') as $file) {
+                    $path = $file->store('uploads', 'public');
+                    
+                    Foto::create([
+                        'id_barang' => $barang->id_barang,
+                        'foto' => $path
+                    ]);
+                }
             }
 
             DB::commit();
