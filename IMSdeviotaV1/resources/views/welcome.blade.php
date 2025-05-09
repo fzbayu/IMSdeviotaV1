@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Management System Deviota</title>  
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -258,13 +259,22 @@
         
     <!-- Peraturan -->
     <div class="container">
-        <h2 class="section-title">PERATURAN</h2>
-        <div class="peraturan">
-            <ol>
-                <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac mattis urna. Aenean eget semper nisl. Aenean scelerisque turpis a justo porttitor varius. Nunc consequat urna sed nunc pretium aliquet. Praesent id velit quis tellus auctor eleifend. Nullam lacinia a purus vitae porta. Nam vulputate ligula ac sem efficitur bibendum.</li>
-                <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac mattis urna. Aenean eget semper nisl. Aenean scelerisque turpis a justo porttitor varius. Nunc consequat urna sed nunc pretium aliquet. Praesent id velit quis tellus auctor eleifend. Nullam lacinia a purus vitae porta. Nam vulputate ligula ac sem efficitur bibendum.</li>
-            </ol>
-        </div>
+    <h2 class="section-title">PERATURAN</h2>
+    <div class="peraturan" style="line-height: 1.3; margin-top: 10px;">
+        <ol style="padding-left: 20px; margin: 0;">
+            <li style="margin-bottom: 2px;">Setiap peminjaman barang wajib mengisi form pengambilan dengan data yang valid dan sesuai identitas.</li>
+            <li style="margin-bottom: 2px;">Barang harus diambil sendiri oleh peminjam yang terdaftar, tidak boleh diwakilkan.</li>
+            <li style="margin-bottom: 2px;">Peminjam bertanggung jawab penuh atas kerusakan atau kehilangan barang selama masa peminjaman.</li>
+            <li style="margin-bottom: 2px;">Barang harus dikembalikan dalam kondisi baik tanpa kerusakan sesuai dengan keadaan saat dipinjam.</li>
+            <li style="margin-bottom: 2px;">Pengembalian barang wajib dilakukan tepat waktu sesuai tanggal yang disepakati. Keterlambatan pengembalian dikenakan sanksi.</li>
+            <li style="margin-bottom: 2px;">Dilarang memodifikasi, memperbaiki, atau membongkar barang tanpa izin petugas.</li>
+            <li style="margin-bottom: 2px;">Jika terjadi kerusakan atau masalah teknis selama peminjaman, segera hubungi admin untuk penanganan.</li>
+            <li style="margin-bottom: 2px;">Peminjam wajib menjaga kebersihan dan keutuhan barang selama masa peminjaman.</li>
+            <li style="margin-bottom: 2px;">Setiap pelanggaran terhadap peraturan ini dapat dikenakan sanksi berupa denda atau pembatasan hak peminjaman.</li>
+            <li>Data yang diinputkan harus sesuai dengan barang yang dipinjam. Ketidaksesuaian data dapat membatalkan peminjaman.</li>
+        </ol>
+    </div>
+</div>
         
         <!-- List Produk -->
         <h2 class="section-title">PRODUK</h2>
@@ -319,9 +329,11 @@
                 <br>
                 <div class="contact-info">
                     <p><strong>Kontak</strong></p>
-                    <p>Mas Rauf Budiman : 081298391283</p><br>
+                    <p>Admin : 0813-2280-8849</p><br>
                     <p><strong>Lokasi</strong></p>
-                    <p>Jl. Setiabudhi Bandung, No. 123A</p>
+                    <p>Jl. Zamrud XX No.195E, <br>
+                         Ciwaruga, Kec. Parongpong, <br>
+                         Kota Bandung, Jawa Barat 40559</p>
                 </div>
             </div>
         </div>

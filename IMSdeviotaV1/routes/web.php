@@ -29,6 +29,10 @@ Route::put('/adminDashboard/{id}', [BarangController::class, 'update'])->name('b
 Route::delete('/adminDashboard/{id}', [BarangController::class, 'delete'])->name('barang.delete');
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
 Route::get('/admin/notifikasi', [BarangController::class, 'notifikasi'])->name('barang.notifikasi');
+Route::delete('/notif/remove/{id}', [BarangController::class, 'remove'])->name('notif.remove');
+Route::post('/notif/clear', [BarangController::class, 'clearAll'])->name('notif.clear');
+
+Route::post('/tambah-kategori', [App\Http\Controllers\BarangController::class, 'tambahKategori'])->name('barang.tambahKategori');
 
 // PENCARIAN BARANG
 Route::get('/cari-barang', [BarangController::class, 'cari']);
@@ -89,3 +93,8 @@ Route::resource('mahasiswa', MahasiswaController::class);
 // ADMIN LOGIN
 Route::get('/admin/login', [AdminController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login.submit');
+
+// JAVA DROP FOTO
+Route::get('js/tambah.js', function () {
+    return response()->file(resource_path('js/tambah.js'));
+});

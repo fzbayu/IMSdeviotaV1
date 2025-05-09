@@ -3,18 +3,65 @@
 <head>
     <title>Rekap Peminjaman</title>
     <style>
-        body { font-family: sans-serif; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
-        th { background-color: #eee; }
+        body { 
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header-text {
+            margin-left: 20px;
+        }
+        .header-text h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header-text p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        th, td { 
+            border: 1px solid #000; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #eee; 
+            font-weight: bold;
+        }
+        .filter-info {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .logo {
+            height: 80px;
+        }
     </style>
 </head>
 <body>
-    <h2>Rekap Data Peminjaman</h2>
-    <p>Status: {{ $status_terpilih ?: 'Semua' }}</p>
-    @if($tanggal_mulai && $tanggal_selesai)
-        <p>Rentang Tanggal: {{ $tanggal_mulai }} s.d {{ $tanggal_selesai }}</p>
-    @endif
+    <div class="header">
+        <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Logo">
+        <div class="header-text">
+        </div>
+    </div>
+    <h1>Rekap Data Peminjaman</h1>
+            <p>Laporan Sistem Peminjaman Barang</p>
+
+    <div class="filter-info">
+        <p><strong>Status:</strong> {{ $status_terpilih ?: 'Semua' }}</p>
+        @if($tanggal_mulai && $tanggal_selesai)
+            <p><strong>Rentang Tanggal:</strong> {{ $tanggal_mulai }} s.d {{ $tanggal_selesai }}</p>
+        @endif
+    </div>
 
     <table>
         <thead>

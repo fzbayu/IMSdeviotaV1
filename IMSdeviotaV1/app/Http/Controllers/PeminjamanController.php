@@ -8,6 +8,8 @@ use App\Models\Mahasiswa;
 use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
+
 
 class PeminjamanController extends Controller
 {
@@ -52,7 +54,7 @@ class PeminjamanController extends Controller
         session(['cart' => $cart]);
 
         $barangIds = collect($cart)->pluck('id_barang');
-        $barang = Barang::whereIn('id_barang', $barangIds)->get();
+        $barang = Barang::with('foto')->whereIn('id_barang', $barangIds)->get();
     
         // Gabungkan dengan jumlah
         $barangWithQty = $barang->map(function ($barang) use ($cart) {
@@ -168,66 +170,68 @@ class PeminjamanController extends Controller
 
     public function formKembalikan(Request $request)
     {
-        $request->validate([
-            'nama_mahasiswa' => 'required|string',
-            'nim' => 'required|string',
-        ]);
+        $nim = $request->nim;
+        $nama = $request->nama_mahasiswa;
 
-        $mahasiswa = Mahasiswa::where('nim', $request->nim)
-            ->where('nama_mahasiswa', $request->nama_mahasiswa)
-            ->first();
-
-        if (!$mahasiswa) {
-            return back()->withErrors(['not_found' => 'Mahasiswa tidak ditemukan.']);
-        }
+        $mahasiswa = Mahasiswa::where('nim', $nim)
+            ->where('nama_mahasiswa', $nama)
+            ->firstOrFail();
 
         $peminjaman = Peminjaman::with('barang')
             ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
-            ->where('status', 'Dipinjam')
+            ->where('status', '!=', 'Dikembalikan')
             ->get();
+
+        // Simpan jumlah awal sekali (untuk rekapan)
+        foreach ($peminjaman as $pinjam) {
+            $key = "jumlah_awal_{$pinjam->id_peminjaman}";
+            if (!session()->has($key)) {
+                session()->put($key, $pinjam->jumlah);
+            }
+        }
 
         return view('peminjaman.kembalikan', compact('peminjaman', 'mahasiswa'));
     }
 
-    public function kembalikanSemuaBarang(Request $request)
+ public function kembalikanSemuaBarang(Request $request)
     {
-        // Validasi input
         $request->validate([
-            'id_mahasiswa' => 'required|exists:mahasiswa,id_mahasiswa' // Fix the validation field name
+            'id_mahasiswa' => 'required|exists:mahasiswa,id_mahasiswa'
         ]);
-        
+
         $idMahasiswa = $request->id_mahasiswa;
         $mahasiswa = Mahasiswa::findOrFail($idMahasiswa);
-        
-        // Ambil semua peminjaman dengan status 'Dipinjam' untuk mahasiswa ini
+
         $peminjaman = Peminjaman::where('id_mahasiswa', $idMahasiswa)
-                    ->where('status', 'Dipinjam')
-                    ->get();
-        
-        if ($peminjaman->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada barang yang perlu dikembalikan');
-        }
-        
-        $totalItemDikembalikan = 0;
-        
+            ->where('status', '!=', 'Dikembalikan')
+            ->get();
+
         foreach ($peminjaman as $item) {
-            // Update stok barang
-            $barang = Barang::findOrFail($item->id_barang);
-            $barang->stok += $item->jumlah;
-            $barang->save();
-            
-            // Update peminjaman
+            $sessionKey = "jumlah_awal_{$item->id_peminjaman}";
+            $jumlahAwal = session($sessionKey, $item->jumlah); // fallback
+            $jumlahSekarang = $item->jumlah;
+
+            $sisa = $jumlahAwal - $jumlahSekarang;
+
+            if ($sisa > 0) {
+                $barang = Barang::findOrFail($item->id_barang);
+                $barang->stok += $sisa;
+                $barang->save();
+            }
+
+            // Reset jumlah & update status
+            $item->jumlah = $jumlahAwal;
             $item->status = 'Dikembalikan';
             $item->tanggal_kembali = now();
             $item->save();
-            
-            $totalItemDikembalikan += $item->jumlah;
+
+            session()->forget($sessionKey);
         }
-        
+
         return redirect()->route('peminjaman.kembalikanForm', [
             'nama_mahasiswa' => $mahasiswa->nama_mahasiswa,
             'nim' => $mahasiswa->nim,
-        ])->with('success', 'Berhasil Mengembalikan Semua item');   
+        ])->with('success', 'Berhasil Mengembalikan Semua Item');
     }
 
     public function prosesKembalikan(Request $request, $id)
@@ -238,24 +242,40 @@ class PeminjamanController extends Controller
             'jumlah_kembalikan' => 'required|numeric|min:1|max:' . $peminjaman->jumlah
         ]);
 
-        $barang = Barang::findOrFail($peminjaman->id_barang);
         $jumlahKembalikan = $request->jumlah_kembalikan;
 
-        // Update stok barang
+        // Simpan jumlah awal jika belum ada
+        $sessionKey = "jumlah_awal_{$peminjaman->id_peminjaman}";
+        if (!session()->has($sessionKey)) {
+            session()->put($sessionKey, $peminjaman->jumlah);
+        }
+
+        // Tambahkan ke stok barang
+        $barang = Barang::findOrFail($peminjaman->id_barang);
         $barang->stok += $jumlahKembalikan;
         $barang->save();
 
-        // Update jumlah di peminjaman
+        // Kurangi jumlah
         $peminjaman->jumlah -= $jumlahKembalikan;
 
-        if ($peminjaman->jumlah == 0) {
+        if ($peminjaman->jumlah <= 0) {
+            // Ambil jumlah awal
+            $jumlahAwal = session($sessionKey, $jumlahKembalikan); // fallback
+
+            // Reset jumlah ke awal hanya untuk keperluan rekapan
+            $peminjaman->jumlah = $jumlahAwal;
             $peminjaman->status = 'Dikembalikan';
             $peminjaman->tanggal_kembali = now();
+
+            // Hapus session
+            session()->forget($sessionKey);
+        } else {
+            $peminjaman->status = 'Dikembalikan Sebagian';
         }
 
         $peminjaman->save();
 
-        // Ambil ulang semua data peminjaman & mahasiswa (tanpa redirect)
+        // Refresh data
         $mahasiswa = $peminjaman->mahasiswa;
         $peminjamanAll = Peminjaman::with('barang')
             ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
@@ -265,8 +285,9 @@ class PeminjamanController extends Controller
         return view('peminjaman.kembalikan', [
             'peminjaman' => $peminjamanAll,
             'mahasiswa' => $mahasiswa,
-        ])->with('success', 'Berhasil Mengembalikan Item'); 
+        ])->with('success', 'Berhasil Mengembalikan Item');
     }
+
 
     public function show_riwayat_peminjaman(Request $request) 
     {

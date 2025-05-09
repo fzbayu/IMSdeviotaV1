@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    @vite(['resources/js/app.js'])
+    <!-- @vite(['resources/js/app.js']) -->
     <meta charset="UTF-8">
     <title>Form Kembalikan</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
 

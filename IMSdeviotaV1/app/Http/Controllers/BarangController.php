@@ -98,6 +98,32 @@ class BarangController extends Controller
         }
     }
 
+    public function tambahKategori(Request $request)
+    {
+        $request->validate([
+            'nama_kategori' => 'required|string|max:100|unique:kategori,nama_kategori',
+        ]);
+
+        try {
+            \Log::info('Menyimpan kategori: ' . $request->nama_kategori);
+
+            $kategori = Kategori::create([
+                'nama_kategori' => $request->nama_kategori
+            ]);
+
+            \Log::info('Kategori tersimpan: ' . $kategori->id_kategori);
+
+            if ($request->has('redirect') && $request->redirect == 'formTambah') {
+                return redirect()->route('barang.formTambah')->with('success', 'Kategori berhasil ditambahkan');
+            }
+
+            return redirect('/adminDashboard')->with('success', 'Kategori berhasil ditambahkan');
+        } catch (\Exception $e) {
+            \Log::error('Gagal simpan kategori: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     public function edit($id)
     {
         $barang = Barang::findOrFail($id);

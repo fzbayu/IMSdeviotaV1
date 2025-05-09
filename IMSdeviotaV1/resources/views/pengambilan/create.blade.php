@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    @vite(['resources/js/app.js'])
+@vite(['resources/css/listbarang.css', 'resources/js/listbarang.js'])
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -294,25 +295,31 @@
     <form action="{{ route('submit.pengambilan') }}" method="POST">
         @csrf
             <div class="container">
-                    <div class="left">
-                    @foreach ($barangWithQty as $item)
-                    <div class="item-card">
-                        <img src="{{ asset('storage/' . $item['barang']->gambar) }}" alt="{{ $item['barang']->nama_barang }}" width="80" style="border-radius: 8px; margin-right: 10px;">
-                        <div class="item-info">
-                            {{ $item['barang']->nama_barang }}
-                            <div class="counter" style="display: flex; align-items: center; gap: 8px;">
-                                <button>-</button>
-                                <strong><span>{{ $item['jumlah'] }}</span></strong>
-                                <button>+</button>
-                            </div>
-                        </div>
-                        <div class="button-group">
-                            <img src="images/trash.png" class="btn-trash">
-                        </div>
+            <div class="left">
+            @foreach ($barangWithQty as $item)
+                @php $barang = $item['barang']; @endphp
+                <div class="item-card">
+                    @if($barang->foto->count() > 0)
+                        <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
+                    @else
+                        <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+                    @endif
 
+                    <div class="item-info">
+                        {{ $barang->nama_barang }}
+                        <div class="counter" style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button">-</button>
+                            <strong><span>{{ $item['jumlah'] }}</span></strong>
+                            <button type="button">+</button>
+                        </div>
                     </div>
-                    @endforeach
+
+                    <div class="button-group">
+                        <img src="{{ asset('images/trash.png') }}" class="btn-trash">
+                    </div>
                 </div>
+            @endforeach
+        </div>
 
                 <div class="right">
                     <h1 style="color:#65558F">TOTAL : <span><?php echo $totalItems; ?> ITEM</span></h1><br>
