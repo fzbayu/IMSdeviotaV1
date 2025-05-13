@@ -30,8 +30,8 @@ class PeminjamanController extends Controller
         $kategori = Kategori::all();
 
         $query = Barang::with('kategori')
-                    ->where('tipe', 'Barang Dipinjam')
-                    ->where('stok', '>', 0);
+            ->where('tipe', 'Barang Dipinjam')
+            ->where('stok', '>', 0);
 
         // Filter pencarian
         if ($request->filled('search')) {
@@ -55,7 +55,7 @@ class PeminjamanController extends Controller
 
         $barangIds = collect($cart)->pluck('id_barang');
         $barang = Barang::with('foto')->whereIn('id_barang', $barangIds)->get();
-    
+
         // Gabungkan dengan jumlah
         $barangWithQty = $barang->map(function ($barang) use ($cart) {
             $qty = collect($cart)->firstWhere('id_barang', $barang->id_barang)['jumlah'];
@@ -64,10 +64,10 @@ class PeminjamanController extends Controller
                 'jumlah' => $qty
             ];
         });
-    
+
         return view('peminjaman.create', compact('barangWithQty'));
     }
-    
+
     public function submitPeminjaman(Request $request)
     {
         $validated = $request->validate([
@@ -89,7 +89,7 @@ class PeminjamanController extends Controller
                     ->with('error', 'NIM sudah terdaftar, silahkan input dengan nama yang sama.')
                     ->withInput();
             }
-            
+
             // Update kontak jika perlu
             $mahasiswa->kontak = $validated['kontak'];
             $mahasiswa->save();
@@ -193,7 +193,7 @@ class PeminjamanController extends Controller
         return view('peminjaman.kembalikan', compact('peminjaman', 'mahasiswa'));
     }
 
- public function kembalikanSemuaBarang(Request $request)
+    public function kembalikanSemuaBarang(Request $request)
     {
         $request->validate([
             'id_mahasiswa' => 'required|exists:mahasiswa,id_mahasiswa'
@@ -289,15 +289,15 @@ class PeminjamanController extends Controller
     }
 
 
-    public function show_riwayat_peminjaman(Request $request) 
+    public function show_riwayat_peminjaman(Request $request)
     {
         $query = Peminjaman::with(['mahasiswa', 'barang']);
-        
+
         // Filter status (opsional)
         if ($request->filled('filter_status')) {
             $query->where('status', $request->filter_status);
         }
-        
+
         // Filter rentang datetime
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tanggal_pinjam', [
@@ -305,9 +305,9 @@ class PeminjamanController extends Controller
                 $request->tanggal_selesai . ' 23:59:59'
             ]);
         }
-        
+
         $peminjaman = $query->orderBy('tanggal_pinjam', 'desc')->get();
-        
+
         return view('admin/peminjaman.index', [
             'peminjaman' => $peminjaman,
             'status_terpilih' => $request->filter_status ?? '',
@@ -333,6 +333,12 @@ class PeminjamanController extends Controller
 
         $peminjaman = $query->orderBy('tanggal_pinjam', 'desc')->get();
 
+        // Format tanggal saat ini (contoh: 2023-11-15)
+        $currentDate = now()->format('Y-m-d');
+
+        // Format alternatif jika ingin lebih detail (contoh: 20231115_1425)
+        // $currentDate = now()->format('Ymd_His');
+
         $pdf = Pdf::loadView('admin.peminjaman.pdf', [
             'peminjaman' => $peminjaman,
             'status_terpilih' => $request->filter_status ?? '',
@@ -340,7 +346,7 @@ class PeminjamanController extends Controller
             'tanggal_selesai' => $request->tanggal_selesai
         ])->setPaper('A4', 'landscape');
 
-        return $pdf->download('rekap_peminjaman.pdf');
+        return $pdf->download("rekap_peminjaman_{$currentDate}.pdf");
     }
 
     // Tambah jumlah
@@ -365,5 +371,28 @@ class PeminjamanController extends Controller
         return response()->json(['message' => 'Cart updated']);
     }
 
+    public function deleteSelected(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:peminjaman,id_peminjaman'
+        ]);
 
+        try {
+            Peminjaman::whereIn('id_peminjaman', $request->ids)->delete();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function deleteAll()
+    {
+        try {
+            Peminjaman::truncate();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }

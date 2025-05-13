@@ -212,4 +212,17 @@ class PengambilanController extends Controller
 
         return $pdf->download('riwayat_pengambilan.pdf');
     }
+
+    public function deleteAll()
+    {
+        Pengambilan::truncate();
+        return redirect()->route('admin/pengambilan.index')->with('success', 'Semua data berhasil dihapus.');
+    }
+
+    public function deleteSelected(Request $request)
+    {
+        Pengambilan::whereIn('id_pengambilan', $request->ids)->delete();
+        return response()->json(['success' => true]);
+    }
+
 }

@@ -69,6 +69,8 @@ Route::resource('mahasiswa', MahasiswaController::class);
     // ADMIN OPERATION
     Route::get('/riwayat_peminjaman', [PeminjamanController::class, 'show_riwayat_peminjaman'])->name('admin/peminjaman.index');
     Route::get('/admin/peminjaman/exportPDF', [PeminjamanController::class, 'exportPDF'])->name('admin/peminjaman.export');
+    Route::post('/admin/peminjaman/deleteSelected', [PeminjamanController::class, 'deleteSelected'])->name('admin/peminjaman.deleteSelected');
+    Route::post('/admin/peminjaman/deleteAll', [PeminjamanController::class, 'deleteAll'])->name('admin/peminjaman.deleteAll');
 
 
 // PENGAMBILAN
@@ -88,6 +90,9 @@ Route::resource('mahasiswa', MahasiswaController::class);
     // ADMIN OPERATION
     Route::get('/riwayat_pengambilan', [PengambilanController::class, 'show_riwayat_pengambilan'])->name('admin/pengambilan.index');
     Route::get('/admin/pengambilan/export-PDF', [PengambilanController::class, 'exportPDF'])->name('admin/pengambilan.export-pdf');
+    Route::delete('/admin/pengambilan/delete-all', [PengambilanController::class, 'deleteAll'])->name('admin/pengambilan.deleteAll');
+    Route::post('/admin/pengambilan/delete-selected', [PengambilanController::class, 'deleteSelected'])->name('admin/pengambilan.deleteSelected');
+
 
 
 // ADMIN LOGIN
