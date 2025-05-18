@@ -143,6 +143,7 @@
         padding: 14px 16px;
         text-align: center;
         font-weight: 600;
+        border: 1px solid #555;
     }
 
     td {
@@ -150,6 +151,7 @@
         border-bottom: 1px solid #eee;
         text-align: center;
         vertical-align: middle;
+        border: 1px solid #555;
     }
 
     tbody tr:hover {
@@ -221,10 +223,44 @@
         background-color: #6a0dad;
         color: white;
     }
+
+    /* Tombol Cari yang sesuai dengan warna tombol lainnya */
+    form button[type="submit"] {
+        padding: 8px 14px;
+        border-radius: 5px;
+        background-color: #6a0dad;
+        /* Warna yang sama dengan tombol lainnya */
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    form button[type="submit"]:hover {
+        background-color: #6a0dad;
+        /* Efek hover */
+    }
+
+    /* Memberikan jarak antar form pencarian dan tombol */
+    form {
+        display: flex;
+        gap: 10px;
+        /* Memberikan jarak antara input dan tombol */
+        align-items: center;
+    }
 </style>
 
-<div class="header-container" style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+<div class="header-container">
     <h2>DATA PENGAMBILAN</h2>
+
+    <form method="GET" action="{{ route('admin/pengambilan.index') }}" style="display: flex; align-items: center; gap: 10px;">
+        <input type="text" name="search" placeholder="Cari Nama atau NIM Mahasiswa"
+            value="{{ request('search') }}"
+            style="padding: 8px; width: 300px; border-radius: 5px; border: 1px solid #ccc;">
+        <button type="submit">
+            Cari
+        </button>
+    </form>
 </div>
 
 <!-- Combined Filter and Action Section -->
@@ -268,7 +304,7 @@
         <form id="deleteAllForm" method="POST" action="{{ route('admin/pengambilan.deleteAll') }}">
             @csrf
             @method('DELETE')
-            <button type="submit" id="deleteAllBtn" class="btn delete-btn">
+            <button type="submit" id="deleteAllBtn" class="btn delete-btn" style="background-color: #dc3545; color: white;">
                 <i class="fas fa-trash"></i> Hapus Semua
             </button>
         </form>

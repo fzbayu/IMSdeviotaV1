@@ -10,11 +10,39 @@ use App\Http\Controllers\PengambilanController;
 use App\Http\Controllers\AdminController;
 use App\Models\Barang;
 
-// DASHBOARD
+// Route untuk extend session
+Route::post('/extend-session', [App\Http\Controllers\MahasiswaController::class, 'extendSession']);
+
 Route::get('/', function () {
-    $barang = Barang::with('kategori', 'foto')->get();
-    return view('welcome', compact('barang'));
-})->name('welcome');
+    return redirect()->route('login.form');
+});
+
+// Pastikan rute lainnya ada dan berfungsi dengan benar
+Route::get('/login', [App\Http\Controllers\MahasiswaController::class, 'showLoginForm'])->name('login.form');
+Route::post('/login', [App\Http\Controllers\MahasiswaController::class, 'login'])->name('login.submit');
+Route::get('/logout', [App\Http\Controllers\MahasiswaController::class, 'logout'])->name('logout');
+Route::post('/logout', function () {
+    return redirect('/admin/login')->with('success', 'Berhasil logout!');
+})->name('logout');
+
+
+// Route yang memerlukan autentikasi
+Route::middleware(['web', 'mahasiswa.session'])->group(function () {
+    Route::get('/welcome', function () {
+        // Periksa session timeout sebelum menampilkan halaman
+        app(MahasiswaController::class)->checkSessionTimeout();
+        
+        // Halaman welcome setelah login
+        return view('welcome');
+    })->name('welcome');
+    
+    // Tambahkan route lain yang memerlukan autentikasi di sini
+});
+
+
+Route::get('/welcome', [BarangController::class, 'cari'])->name('welcome');
+
+// DASHBOARD
 
 Route::get('/dbconn', function () {
     return view('dbconn');
@@ -57,8 +85,8 @@ Route::resource('mahasiswa', MahasiswaController::class);
     Route::post('/peminjaman/kembalikan/{id}', [PeminjamanController::class, 'prosesKembalikan'])->name('peminjaman.kembalikanProses');
     Route::get('/peminjaman/kembalikan', function () {return view('peminjaman.kembalikan_form');})->name('peminjaman.kembalikanForm');
     Route::post('/peminjaman/kembalikan-semua', [PeminjamanController::class, 'kembalikanSemuaBarang'])->name('peminjaman.kembalikanSemuaBarang');
-    
-
+    Route::get('/peminjaman/kembalikan', [PeminjamanController::class, 'directKembalikan'])->name('peminjaman.kembalikanForm');
+    Route::post('/peminjaman/kembalikan', [PeminjamanController::class, 'formKembalikan'])->name('peminjaman.kembalikanCek');
     
     // Peminjaman barang yang FIX
     Route::get('/listbarang', [PeminjamanController::class, 'listBarang'])->name('listbarang');
@@ -71,7 +99,7 @@ Route::resource('mahasiswa', MahasiswaController::class);
     Route::get('/admin/peminjaman/exportPDF', [PeminjamanController::class, 'exportPDF'])->name('admin/peminjaman.export');
     Route::post('/admin/peminjaman/deleteSelected', [PeminjamanController::class, 'deleteSelected'])->name('admin/peminjaman.deleteSelected');
     Route::post('/admin/peminjaman/deleteAll', [PeminjamanController::class, 'deleteAll'])->name('admin/peminjaman.deleteAll');
-
+    Route::get('/barang/peminjaman/{id}', [BarangController::class, 'show_detail_peminjaman'])->name('peminjaman.detail');
 
 // PENGAMBILAN
 
@@ -92,7 +120,7 @@ Route::resource('mahasiswa', MahasiswaController::class);
     Route::get('/admin/pengambilan/export-PDF', [PengambilanController::class, 'exportPDF'])->name('admin/pengambilan.export-pdf');
     Route::delete('/admin/pengambilan/delete-all', [PengambilanController::class, 'deleteAll'])->name('admin/pengambilan.deleteAll');
     Route::post('/admin/pengambilan/delete-selected', [PengambilanController::class, 'deleteSelected'])->name('admin/pengambilan.deleteSelected');
-
+    Route::get('/barang/pengambilan/{id}', [BarangController::class, 'show_detail_pengambilan'])->name('pengambilan.detail');
 
 
 // ADMIN LOGIN
@@ -102,4 +130,12 @@ Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.logi
 // JAVA DROP FOTO
 Route::get('js/tambah.js', function () {
     return response()->file(resource_path('js/tambah.js'));
+});
+
+Route::get('js/session-timer.js', function () {
+    return response()->file(resource_path('js/session-timer.js'));
+});
+
+Route::get('js/edit.js', function () {
+    return response()->file(resource_path('js/edit.js'));
 });

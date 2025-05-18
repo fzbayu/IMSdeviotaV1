@@ -79,7 +79,7 @@
         <tbody>
             @foreach($peminjaman as $pinjam)
             <tr>
-                <td>{{ $loop->iteration }}</td>
+                <td>{{ $pinjam->id_peminjaman }}</td>
                 <td>{{ optional($pinjam->mahasiswa)->nama_mahasiswa ?? '-' }}</td>
                 <td>{{ optional($pinjam->mahasiswa)->nim ?? '-' }}</td>
                 <td>{{ optional($pinjam->barang)->nama_barang ?? '-' }}</td>

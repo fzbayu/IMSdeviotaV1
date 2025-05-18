@@ -1,0 +1,245 @@
+body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Header Section */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 30px;
+        background: #fff;
+    }
+
+    h2 {
+        color: #7B1FA2;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    /* Main Filter and Action Container */
+    .main-action-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 15px 30px;
+        margin: 0 20px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Filter Section */
+    .filter-section {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        color: #6a0dad;
+        white-space: nowrap;
+        font-size: 0.95rem;
+    }
+
+    .filter-group select,
+    .filter-group input[type="date"] {
+        background-color: #6a0dad;
+        color: #ffffff;
+        padding: 8px 12px;
+        border: 2px solid #6a0dad;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-group select:hover,
+    .filter-group input[type="date"]:hover {
+        background-color: #5c0b9e;
+    }
+
+    .filter-group input[type="date"] {
+        min-width: 150px;
+    }
+
+    .date-separator {
+        color: #6a0dad;
+        font-weight: 500;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        box-sizing: border-box;
+    }
+
+    .export-btn {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .reset-link {
+        color: #dc3545;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        margin-left: 10px;
+    }
+
+    /* Table Styles */
+    .table-container {
+        padding: 0 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin: 20px 0;
+    }
+
+    thead {
+        background-color: #7B1FA2;
+        color: white;
+    }
+
+    th {
+        padding: 14px 16px;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #555;
+    }
+
+    td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #555;
+    }
+
+    tbody tr:hover {
+        background-color: rgba(123, 31, 162, 0.1);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+        .main-action-container {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .action-buttons {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .filter-section {
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .filter-group {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .header-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        h2 {
+            font-size: 2rem;
+        }
+    }
+
+    .delete-btn {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .delete-btn:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    input[type="date"] {
+        color: white;
+        background-color: #6a0dad;
+        /* supaya kontras */
+        border: 1px solid #ccc;
+        padding: 6px;
+        border-radius: 4px;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+
+    .filter-btn {
+        background-color: #6a0dad;
+        color: white;
+    }
+
+    /* Tombol Cari yang sesuai dengan warna tombol lainnya */
+    form button[type="submit"] {
+        padding: 8px 14px;
+        border-radius: 5px;
+        background-color: #6a0dad;
+        /* Warna yang sama dengan tombol lainnya */
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    form button[type="submit"]:hover {
+        background-color: #6a0dad;
+        /* Efek hover */
+    }
+
+    /* Memberikan jarak antar form pencarian dan tombol */
+    form {
+        display: flex;
+        gap: 10px;
+        /* Memberikan jarak antara input dan tombol */
+        align-items: center;
+    }

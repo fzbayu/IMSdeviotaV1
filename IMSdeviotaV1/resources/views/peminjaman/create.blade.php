@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset('js/session-timer.js') }}" defer></script>
     <style>
 
         /* Semua */
@@ -274,7 +276,6 @@
     </script>
     @endif
 
-    <!-- Notifikasi Gagal karena NIM sudah terdaftar -->
     @if (session('error'))
         <div class="overlay" id="popupOverlay"></div>
         <div class="popup-success" id="popupError" style="background-color: #fff4f4; color: #d32f2f;">
@@ -292,71 +293,59 @@
         </script>
     @endif
 
+    @if(session()->has('login_mahasiswa'))
+        <meta name="session-start-id" content="{{ session('login_mahasiswa.php_session_id') }}">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        <div style="display: none;">
+            <span id="session-timer">01:00</span>
+        </div>
+    @endif
 
-        <!-- List Barang yang dipinjam dan Form -->
-        <form action="{{ route('submit.peminjaman') }}" method="POST">
+    <form action="{{ route('submit.peminjaman') }}" method="POST">
         @csrf
-            <div class="container">
-                <div class="left">
-                    @foreach ($barangWithQty as $item)
-                        @php $barang = $item['barang']; @endphp
-                        <div class="item-card">
-                            @if($barang->foto->count() > 0)
-                                <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
-                            @else
-                                <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
-                            @endif
+        <div class="container">
+            <div class="left">
+                @foreach ($barangWithQty as $item)
+                    @php $barang = $item['barang']; @endphp
+                    <div class="item-card">
+                        @if($barang->foto->count() > 0)
+                            <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
+                        @else
+                            <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+                        @endif
 
-                            <div class="item-info">
-                                {{ $barang->nama_barang }}
-                                <div class="counter" style="display: flex; align-items: center; gap: 8px;">
-                                    <button type="button">-</button>
-                                    <strong><span>{{ $item['jumlah'] }}</span></strong>
-                                    <button type="button">+</button>
-                                </div>
-                            </div>
-
-                            <div class="button-group">
-                                <img src="{{ asset('images/trash.png') }}" class="btn-trash">
+                        <div class="item-info">
+                            {{ $barang->nama_barang }}
+                            <div class="counter" style="display: flex; align-items: center; gap: 8px;">
+                                <strong><span>{{ $item['jumlah'] }}</span></strong>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-
-                <div class="right">
-                    <h1 style="color:#65558F">TOTAL : <span><?php echo $totalItems; ?> ITEM</span></h1><br>     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nim">NIM</label>
-                            <input type="text" name="nim" id="nim" placeholder="NIM" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="nama">Nama</label>
-                            <input type="text" name="nama" id="nama" placeholder="Nama" required>
-                        </div>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="kontak">Kontak</label>
-                            <input type="text" name="kontak" id="kontak" placeholder="Kontak" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="tanggal_kembali">Tanggal Kembali</label>
-                            <input type="date" name="tanggal_kembali" id="tanggal_kembali" required>
-                        </div>
-                    </div>
-                        <button type="submit" class="submit-btn">PINJAM BARANG</button>
-                    </form>
-
-                    <details class="accordion">
-                        <summary>Syarat & Ketentuan</summary>
-                        <p>Awas kalo ilang, kalo ilang denda 1 miliar, silahkan ambil sendiri!</p>
-                    </details>
-                </div>
-
+                @endforeach
             </div>
-        </form>
+
+            <div class="right">
+                <h1 style="color:#65558F">TOTAL : <span>{{ $totalItems }} ITEM</span></h1><br>     
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="kontak">Kontak</label>
+                        <input type="text" name="kontak" id="kontak" placeholder="Kontak" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal_kembali">Tanggal Kembali</label>
+                        <input type="date" name="tanggal_kembali" id="tanggal_kembali" required>
+                    </div>
+                </div>
+                    <button type="submit" class="submit-btn">PINJAM BARANG</button>
+
+                <details class="accordion">
+                    <summary>Syarat & Ketentuan</summary>
+                    <p>Awas kalo ilang, kalo ilang denda 1 miliar, silahkan ambil sendiri!</p>
+                </details>
+            </div>
+        </div>
+    </form>
+
 
 </body>
 </html>

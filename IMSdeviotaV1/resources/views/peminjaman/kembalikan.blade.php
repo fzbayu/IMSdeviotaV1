@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Pinjaman</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <style>
         /* Reset & Font */
@@ -177,6 +178,146 @@
             font-size: 16px;
         }
 
+        .popup-detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .popup-detail-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            width: 90%;
+            max-width: 420px;
+            animation: slideUp 0.4s ease;
+            border: 2px solid #6554C4;
+        }
+
+        .popup-detail-box h2 {
+            color: #4B3BA4;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .popup-content {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .popup-row .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .popup-row .value {
+            color: #555;
+        }
+
+        .btn-close-popup {
+            background: #6554C4;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .btn-close-popup:hover {
+            background: #4a3b9f;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .late-notice {
+            background-color: #ffe6e6;
+            color: #b30000;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .late-button {
+            position: relative;
+            border: 2px solid #e74c3c !important;
+            color: #e74c3c !important;
+        }
+
+        /* Tambahkan di bagian style */
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .preview-container img {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            background: #f8f9fa;
+        }
+
+        .text-muted {
+            color: #6c757d;
+            font-size: 0.875em;
+        }
+
+        /* Responsive form */
+        @media (max-width: 768px) {
+            .form-kembalikan-sebagian {
+                flex-direction: column;
+            }
+
+            .form-kembalikan-sebagian>div {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 
@@ -195,43 +336,113 @@
 
     <!-- Notifikasi -->
     @if (session('success'))
-        <div class="overlay" id="popupOverlay"></div>
-        <div class="popup-success" id="popupSuccess">
-            <p>{{ session('success') }} ✅</p>
-            <button onclick="closeSuccess()">Ok</button>
-        </div>
+    <div class="overlay" id="popupOverlay"></div>
+    <div class="popup-success" id="popupSuccess">
+        <p>{{ session('success') }} ✅</p>
+        <button onclick="closeSuccess()">OK</button>
+    </div>
     @endif
+
+    @if(session()->has('login_mahasiswa'))
+    <meta name="session-start-id" content="{{ session('login_mahasiswa.php_session_id') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <div style="display: none;">
+        <span id="session-timer">01:00</span>
+    </div>
+    @endif
+
+    <!-- TOGGLE MODE -->
+    <div style="margin: 20px 45px; display: flex; gap: 10px; justify-content: center;">
+        <button id="modeSingle" style="padding: 10px 16px; border: none; border-radius: 5px; background-color: #6a0dad; color: white; font-weight: bold; cursor: pointer; margin-right: 550px;">
+            Mode: Kembalikan Satu per Satu
+        </button>
+        <button id="modeAll" style="padding: 10px 16px; border: none; border-radius: 5px; background-color: #ccc; color: black; font-weight: bold; cursor: pointer;">
+            Mode: Kembalikan Semua
+        </button>
+    </div>
 
     <div class="content">
         <!-- Kiri -->
         <div class="left">
-    @if($peminjaman->isEmpty())
-        <div style="padding: 20px; background-color: #ffe6e6; border: 1px solid #ff4d4d; border-radius: 8px; margin-bottom: 20px; text-align:center; color: #d8000c;">
-            <strong>Tidak ada peminjaman saat ini.</strong>
-        </div>
-    @else
-        @foreach($peminjaman as $pinjam)
+            @if($peminjaman->isEmpty())
+            <div style="padding: 20px; background-color: #ffe6e6; border: 1px solid #ff4d4d; border-radius: 8px; margin-bottom: 20px; text-align:center; color: #d8000c;">
+                <strong>Tidak ada peminjaman saat ini.</strong>
+            </div>
+            @else
+            @foreach($peminjaman as $pinjam)
             @php $barang = $pinjam->barang; @endphp
+
             <div class="item-card">
+                {{-- Gambar Barang --}}
                 @if($barang && $barang->foto->count() > 0)
-                    <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
+                <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
                 @else
-                    <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+                <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
                 @endif
 
                 <div class="item-info">
                     <h4>{{ $barang->nama_barang ?? 'Barang sudah dihapus' }}</h4>
-                    <div class="stok-btn">Dipinjam: <strong>{{ $pinjam->jumlah }}</strong> item</div>
-                    <form action="{{ route('peminjaman.kembalikanProses', $pinjam->id_peminjaman) }}" method="POST" style="margin-top:10px; display:flex; gap:10px;">
+
+                    {{-- Baris 1: Dipinjam dan Lihat Detail --}}
+                    @php
+                    $isLate = $pinjam->tanggal_pengembalian
+                    ? \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pinjam->tanggal_pengembalian))
+                    : false;
+                    @endphp
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 123px; margin-top: 5px;">
+                        <div class="stok-btn">
+                            Dipinjam: <strong>{{ $pinjam->jumlah }}</strong> item
+                        </div>
+                        <button
+                            class="btn-kembalikan {{ $isLate ? 'late-button' : '' }}"
+                            onclick="showDetailPopup(
+                '{{ $barang->nama_barang ?? 'Barang sudah dihapus' }}',
+                '{{ \Carbon\Carbon::parse($pinjam->tanggal_pinjam)->format('d M Y') }}',
+                '{{ \Carbon\Carbon::parse($pinjam->tanggal_kembali)->format('d M Y') }}',
+                '{{ $pinjam->jumlah }}',
+                {{ $isLate ? 'true' : 'false' }}
+            )">
+                            @if($isLate)
+                            ❗
+                            @endif
+                            Lihat Detail
+                        </button>
+                    </div>
+
+                    {{-- Baris 2: Kembalikan dan Upload Bukti --}}
+                    <form
+                        action="{{ route('peminjaman.kembalikanProses', $pinjam->id_peminjaman) }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        class="form-single"
+                        style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                         @csrf
-                        <input type="number" name="jumlah_kembalikan" min="1" max="{{ $pinjam->jumlah }}" value="1" style="width:60px;">
+
+                        <input
+                            type="number"
+                            name="jumlah_kembalikan"
+                            min="1"
+                            max="{{ $pinjam->jumlah }}"
+                            value="1"
+                            style="width: 60px;">
+
+                        <input
+                            type="file"
+                            name="foto_pengembalian[]"
+                            id="foto_pengembalian_{{ $pinjam->id_peminjaman }}"
+                            multiple
+                            accept="image/*"
+                            required>
+
                         <button type="submit" class="btn-kembalikan">Kembalikan</button>
+
+                        <div class="preview-container" style="margin-top: 10px;"></div>
                     </form>
                 </div>
             </div>
-        @endforeach
-    @endif
-</div>
+            @endforeach
+            @endif
+        </div>
 
 
         <!-- Kanan -->
@@ -245,25 +456,171 @@
             <input type="text" value="{{ $mahasiswa->nama_mahasiswa }}" readonly>
 
             @php
-                $masihDipinjam = $peminjaman->where('status', '!=', 'Dikembalikan')->count();
+            $masihDipinjam = $peminjaman->where('status', '!=', 'Dikembalikan')->count();
             @endphp
 
             @if($masihDipinjam > 0)
-                <form action="{{ route('peminjaman.kembalikanSemuaBarang') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="id_mahasiswa" value="{{ $mahasiswa->id_mahasiswa }}">
-                    <button type="submit" onclick="return confirm('Yakin ingin mengembalikan semua barang?')" class="btn-kembalikan-semua">
-                        Kembalikan Semua
-                    </button>
-                </form>
+            <form action="{{ route('peminjaman.kembalikanSemuaBarang') }}" method="POST" enctype="multipart/form-data" id="formKembalikanSemua" class="form-all">
+                @csrf
+                <label for="foto_pengembalian">Bukti Foto Pengembalian:</label><br>
+                <input type="file" name="foto_pengembalian[]" id="foto_pengembalian_global" multiple accept="image/*" required>
+                <small class="text-muted">Maksimal 500KB per foto. Bisa upload multiple foto.</small>
+                <div id="preview-container" style="margin-top: 10px;"></div>
+                <br><br>
+
+                <input type="hidden" name="id_mahasiswa" value="{{ $mahasiswa->id_mahasiswa }}">
+                <button type="button" onclick="confirmKembalikanSemua()" class="btn-kembalikan-semua">
+                    Kembalikan Semua
+                </button>
+            </form>
             @else
-                <a href="{{ route('welcome') }}" class="btn-kembali-home">
-                    ⬅ Kembali ke Home
-                </a>
+            <a href="{{ route('welcome') }}" class="btn-kembali-home">
+                Kembali ke Home
+            </a>
             @endif
         </div>
     </div>
 
+    <!-- POPUP DETAIL -->
+    <div id="popupDetail" class="popup-detail-overlay" style="display: none;">
+        <div class="popup-detail-box">
+            <h2 id="popupTitle">Detail Barang</h2>
+            <div class="popup-content">
+                <div class="popup-row">
+                    <span class="label">📅 Tanggal Pinjam:</span>
+                    <span id="popupTanggalPinjam" class="value"></span>
+                </div>
+                <div class="popup-row">
+                    <span class="label">📆 Tanggal Kembali:</span>
+                    <span id="popupTanggalKembali" class="value"></span>
+                </div>
+                <div class="popup-row">
+                    <span class="label">📦 Jumlah Dipinjam:</span>
+                    <span id="popupJumlah" class="value"></span>
+                </div>
+                <div id="popupLateNotice" class="late-notice" style="display: none;">
+                    ⚠ <strong>Telat mengembalikan barang!</strong>
+                </div>
+
+            </div>
+            <button class="btn-close-popup" onclick="closeDetailPopup()">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Script untuk fungsi closeSuccess -->
+    <script>
+        function closeSuccess() {
+            // Redirect ke halaman welcome saat tombol OK ditekan
+            window.location.href = "{{ route('welcome') }}";
+        }
+
+        // untuk pop up detail
+        function showDetailPopup(namaBarang, tanggalPinjam, tanggalKembali, jumlah, isLate) {
+            document.getElementById('popupTitle').innerText = namaBarang;
+            document.getElementById('popupTanggalPinjam').innerText = tanggalPinjam;
+            document.getElementById('popupTanggalKembali').innerText = tanggalKembali;
+            document.getElementById('popupJumlah').innerText = jumlah;
+
+            const lateNotice = document.getElementById('popupLateNotice');
+            if (isLate) {
+                lateNotice.style.display = 'block';
+            } else {
+                lateNotice.style.display = 'none';
+            }
+
+            document.getElementById('popupDetail').style.display = 'flex';
+        }
+
+        function closeDetailPopup() {
+            document.getElementById('popupDetail').style.display = 'none';
+        }
+
+        // untuk foto
+        document.querySelectorAll('.form-kembalikan-sebagian').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const globalFileInput = document.getElementById('foto_pengembalian_global');
+                if (globalFileInput && globalFileInput.files.length > 0) {
+                    // Buat input file baru dalam form ini
+                    const clonedInput = document.createElement('input');
+                    clonedInput.type = 'file';
+                    clonedInput.name = 'foto_pengembalian';
+                    clonedInput.files = globalFileInput.files; // penting: set FileList
+                    clonedInput.style.display = 'none';
+                    form.appendChild(clonedInput);
+                }
+            });
+        });
+
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const previewContainer = this.closest('form').querySelector('.preview-container') ||
+                    document.getElementById('preview-container');
+                previewContainer.innerHTML = '';
+
+                if (this.files.length > 0) {
+                    Array.from(this.files).forEach(file => {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.style.maxWidth = '100px';
+                                img.style.maxHeight = '100px';
+                                img.style.margin = '5px';
+                                previewContainer.appendChild(img);
+                            }
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Konfirmasi pengembalian semua
+        function confirmKembalikanSemua() {
+            if (confirm('Yakin ingin mengembalikan semua barang?')) {
+                document.getElementById('formKembalikanSemua').submit();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modeSingleBtn = document.getElementById('modeSingle');
+            const modeAllBtn = document.getElementById('modeAll');
+
+            const singleForm = document.querySelectorAll('.form-single');
+            const allForm = document.querySelectorAll('.form-all');
+
+            function setMode(mode) {
+                if (mode === 'single') {
+                    modeSingleBtn.style.backgroundColor = '#6a0dad';
+                    modeSingleBtn.style.color = 'white';
+                    modeAllBtn.style.backgroundColor = '#ccc';
+                    modeAllBtn.style.color = 'black';
+
+                    // Enable single form, disable all form
+                    singleForm.forEach(f => f.querySelectorAll('input, button, select').forEach(el => el.disabled = false));
+                    allForm.forEach(f => f.querySelectorAll('input, button, select').forEach(el => el.disabled = true));
+                } else {
+                    modeAllBtn.style.backgroundColor = '#6a0dad';
+                    modeAllBtn.style.color = 'white';
+                    modeSingleBtn.style.backgroundColor = '#ccc';
+                    modeSingleBtn.style.color = 'black';
+
+                    // Enable all form, disable single form
+                    singleForm.forEach(f => f.querySelectorAll('input, button, select').forEach(el => el.disabled = true));
+                    allForm.forEach(f => f.querySelectorAll('input, button, select').forEach(el => el.disabled = false));
+                }
+            }
+
+            // Default mode: single
+            setMode('single');
+
+            modeSingleBtn.addEventListener('click', () => setMode('single'));
+            modeAllBtn.addEventListener('click', () => setMode('all'));
+        });
+    </script>
+
+    <script src="{{ asset('js/session-timer.js') }}" defer></script>
 </body>
 
 </html>

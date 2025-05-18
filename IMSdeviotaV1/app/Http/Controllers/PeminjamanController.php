@@ -6,6 +6,7 @@ use App\Models\Barang;
 use App\Models\Kategori;
 use App\Models\Mahasiswa;
 use App\Models\Peminjaman;
+use App\Models\FotoPengembalian;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ class PeminjamanController extends Controller
         $kategori = Kategori::all();
 
         $query = Barang::with('kategori')
-            ->where('tipe', 'Barang Dipinjam')
+            ->whereIn('tipe', ['Barang Dipinjam', 'Barang Diambil dan Dipinjam'])
             ->where('stok', '>', 0);
 
         // Filter pencarian
@@ -71,33 +72,39 @@ class PeminjamanController extends Controller
     public function submitPeminjaman(Request $request)
     {
         $validated = $request->validate([
-            'nim' => 'required',
-            'nama' => 'required',
             'kontak' => 'required',
             'tanggal_kembali' => 'required|date',
         ]);
 
         $cart = session('cart', []);
 
-        // Cek apakah NIM sudah terdaftar
-        $mahasiswa = Mahasiswa::where('nim', $validated['nim'])->first();
+        // Ambil data mahasiswa dari session login
+        $loginData = session('login_mahasiswa');
+        $nim = $loginData['nim'] ?? null;
+        $nama = $loginData['nama'] ?? null;
+
+        if (!$nim || !$nama) {
+            return redirect()->route('login.form')->with('error', 'Sesi login tidak ditemukan. Silakan login kembali.');
+        }
+
+        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
 
         if ($mahasiswa) {
-            // Jika nama tidak cocok, tampilkan warning
-            if (strtolower(trim($mahasiswa->nama_mahasiswa)) !== strtolower(trim($validated['nama']))) {
+            // Validasi nama juga agar tidak sembarangan login palsu
+            if (strtolower(trim($mahasiswa->nama_mahasiswa)) !== strtolower(trim($nama))) {
                 return redirect()->back()
-                    ->with('error', 'NIM sudah terdaftar, silahkan input dengan nama yang sama.')
+                    ->with('error', 'Data login tidak valid.')
                     ->withInput();
             }
 
-            // Update kontak jika perlu
+            // Update kontak jika berubah
             $mahasiswa->kontak = $validated['kontak'];
             $mahasiswa->save();
         } else {
-            // Insert mahasiswa baru jika belum ada
+            // Mahasiswa tidak ditemukan padahal login sukses => buat baru
             $mahasiswa = Mahasiswa::create([
-                'nim' => $validated['nim'],
-                'nama_mahasiswa' => $validated['nama'],
+                'nim' => $nim,
+                'nama_mahasiswa' => $nama,
                 'kontak' => $validated['kontak'],
             ]);
         }
@@ -113,7 +120,7 @@ class PeminjamanController extends Controller
                 'id_barang' => $item['id_barang'],
                 'jumlah' => $item['jumlah'],
                 'tanggal_pinjam' => now(),
-                'tanggal_kembali' => $validated['tanggal_kembali'],
+                'tanggal_pengembalian' => $validated['tanggal_kembali'], // ← ini benar
                 'status' => 'Dipinjam',
             ]);
 
@@ -126,52 +133,62 @@ class PeminjamanController extends Controller
         return redirect()->route('keranjang')->with('success', 'Peminjaman berhasil!');
     }
 
-
-    /*public function store(Request $request)
+    public function directKembalikan()
     {
-        $request->validate([
-            'nama_mahasiswa' => 'required|string',
-            'nim' => 'required|string',
-            'kontak' => 'required|string',
-            'id_barang' => 'required|exists:barang,id_barang',
-            'jumlah' => 'required|integer',
-            'tanggal_pinjam' => 'required|date',
-            'tanggal_kembali' => 'nullable|date',
-        ]);
+        // Get data from session
+        $loginData = session('login_mahasiswa');
 
-        $mahasiswa = Mahasiswa::updateOrCreate(
-            ['nim' => $request->nim],
-            [
-                'nama_mahasiswa' => $request->nama_mahasiswa,
-                'kontak' => $request->kontak,
-            ]
-        );
-
-        $barang = Barang::find($request->id_barang);
-
-        if ($barang->stok < $request->jumlah) {
-            return back()->withErrors(['jumlah' => 'Stok tidak mencukupi untuk peminjaman.'])->withInput();
+        if (!$loginData) {
+            return redirect()->route('login.form')->with('error', 'Sesi login tidak ditemukan. Silakan login kembali.');
         }
 
-        Peminjaman::create([
-            'id_mahasiswa' => $mahasiswa->id_mahasiswa,
-            'id_barang' => $request->id_barang,
-            'jumlah' => $request->jumlah,
-            'tanggal_pinjam' => $request->tanggal_pinjam,
-            'tanggal_kembali' => $request->tanggal_kembali,
-            'status' => 'Dipinjam',
-        ]);
+        $nim = $loginData['nim'];
+        $nama = $loginData['nama'];
 
-        $barang->stok -= $request->jumlah;
-        $barang->save();
+        // Find mahasiswa by NIM
+        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
 
-        return redirect()->route('welcome')->with('success', 'Peminjaman berhasil ditambahkan.');
-    }*/
+        if (!$mahasiswa || strtolower(trim($mahasiswa->nama_mahasiswa)) !== strtolower(trim($nama))) {
+            return redirect()->route('login.form')
+                ->withErrors(['not_found' => 'Data tidak ditemukan. Silakan login kembali.']);
+        }
+
+        // Get peminjaman data
+        $peminjaman = Peminjaman::with('barang')
+            ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
+            ->where('status', '!=', 'Dikembalikan')
+            ->where('status', '!=', 'Telat')
+            ->get();
+
+        // Save initial quantities for tracking
+        foreach ($peminjaman as $pinjam) {
+            $key = "jumlah_awal_{$pinjam->id_peminjaman}";
+            if (!session()->has($key)) {
+                session()->put($key, $pinjam->jumlah);
+            }
+        }
+
+        return view('peminjaman.kembalikan', compact('peminjaman', 'mahasiswa'));
+    }
 
     public function formKembalikan(Request $request)
     {
-        $nim = $request->nim;
-        $nama = $request->nama_mahasiswa;
+        // If request comes with NIM and name (from a form)
+        if ($request->filled('nim') && $request->filled('nama_mahasiswa')) {
+            $nim = $request->nim;
+            $nama = $request->nama_mahasiswa;
+        } else {
+            // Otherwise use session data
+            $loginData = session('login_mahasiswa');
+
+            if (!$loginData) {
+                return redirect()->route('login.form')
+                    ->with('error', 'Sesi login tidak ditemukan. Silakan login kembali.');
+            }
+
+            $nim = $loginData['nim'];
+            $nama = $loginData['nama'];
+        }
 
         $mahasiswa = Mahasiswa::where('nim', $nim)
             ->where('nama_mahasiswa', $nama)
@@ -180,6 +197,7 @@ class PeminjamanController extends Controller
         $peminjaman = Peminjaman::with('barang')
             ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
             ->where('status', '!=', 'Dikembalikan')
+            ->where('status', '!=', 'Telat')
             ->get();
 
         // Simpan jumlah awal sekali (untuk rekapan)
@@ -196,7 +214,9 @@ class PeminjamanController extends Controller
     public function kembalikanSemuaBarang(Request $request)
     {
         $request->validate([
-            'id_mahasiswa' => 'required|exists:mahasiswa,id_mahasiswa'
+            'id_mahasiswa' => 'required|exists:mahasiswa,id_mahasiswa',
+            'foto_pengembalian' => 'required|array',
+            'foto_pengembalian.*' => 'image|mimes:jpeg,png,jpg|max:500', // 500MB
         ]);
 
         $idMahasiswa = $request->id_mahasiswa;
@@ -204,88 +224,133 @@ class PeminjamanController extends Controller
 
         $peminjaman = Peminjaman::where('id_mahasiswa', $idMahasiswa)
             ->where('status', '!=', 'Dikembalikan')
+            ->where('status', '!=', 'Telat')
             ->get();
 
-        foreach ($peminjaman as $item) {
-            $sessionKey = "jumlah_awal_{$item->id_peminjaman}";
-            $jumlahAwal = session($sessionKey, $item->jumlah); // fallback
-            $jumlahSekarang = $item->jumlah;
+        DB::beginTransaction();
+        try {
+            foreach ($peminjaman as $item) {
+                $jumlahSekarang = $item->jumlah;
 
-            $sisa = $jumlahAwal - $jumlahSekarang;
+                if (!session()->has("jumlah_awal_{$item->id_peminjaman}")) {
+                    session()->put("jumlah_awal_{$item->id_peminjaman}", $jumlahSekarang);
 
-            if ($sisa > 0) {
-                $barang = Barang::findOrFail($item->id_barang);
-                $barang->stok += $sisa;
-                $barang->save();
+                    $barang = Barang::findOrFail($item->id_barang);
+                    $barang->stok += $jumlahSekarang;
+                    $barang->save();
+                }
+
+                // Simpan multiple foto
+                if ($request->hasFile('foto_pengembalian')) {
+                    foreach ($request->file('foto_pengembalian') as $file) {
+                        $path = $file->store('uploads/pengembalian', 'public');
+                        FotoPengembalian::create([
+                            'id_peminjaman' => $item->id_peminjaman,
+                            'foto' => $path,
+                            'keterangan' => 'Pengembalian semua barang'
+                        ]);
+                    }
+                }
+
+                // Set tanggal kembali
+                $tanggalKembali = now();
+                $item->tanggal_kembali = $tanggalKembali;
+
+                // Periksa jika pengembalian telat
+                if ($tanggalKembali > $item->tanggal_pengembalian) {
+                    $item->status = 'Telat';
+                } else {
+                    $item->status = 'Dikembalikan';
+                }
+
+                $item->save();
+                session()->forget("jumlah_awal_{$item->id_peminjaman}");
             }
 
-            // Reset jumlah & update status
-            $item->jumlah = $jumlahAwal;
-            $item->status = 'Dikembalikan';
-            $item->tanggal_kembali = now();
-            $item->save();
-
-            session()->forget($sessionKey);
+            DB::commit();
+            return redirect()->route('peminjaman.kembalikanForm', [
+                'nama_mahasiswa' => $mahasiswa->nama_mahasiswa,
+                'nim' => $mahasiswa->nim,
+            ])->with('success', 'Berhasil Mengembalikan Semua Item');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal mengembalikan barang: ' . $e->getMessage());
         }
-
-        return redirect()->route('peminjaman.kembalikanForm', [
-            'nama_mahasiswa' => $mahasiswa->nama_mahasiswa,
-            'nim' => $mahasiswa->nim,
-        ])->with('success', 'Berhasil Mengembalikan Semua Item');
     }
+
 
     public function prosesKembalikan(Request $request, $id)
     {
         $peminjaman = Peminjaman::with('mahasiswa')->findOrFail($id);
 
         $request->validate([
-            'jumlah_kembalikan' => 'required|numeric|min:1|max:' . $peminjaman->jumlah
+            'jumlah_kembalikan' => 'required|numeric|min:1|max:' . $peminjaman->jumlah,
+            'foto_pengembalian' => 'required|array',
+            'foto_pengembalian.*' => 'image|mimes:jpeg,png,jpg|max:500', // 500MB
         ]);
 
-        $jumlahKembalikan = $request->jumlah_kembalikan;
+        DB::beginTransaction();
+        try {
+            $jumlahKembalikan = $request->jumlah_kembalikan;
 
-        // Simpan jumlah awal jika belum ada
-        $sessionKey = "jumlah_awal_{$peminjaman->id_peminjaman}";
-        if (!session()->has($sessionKey)) {
-            session()->put($sessionKey, $peminjaman->jumlah);
+            // Simpan jumlah awal jika belum ada
+            $sessionKey = "jumlah_awal_{$peminjaman->id_peminjaman}";
+            if (!session()->has($sessionKey)) {
+                session()->put($sessionKey, $peminjaman->jumlah);
+            }
+
+            // Upload multiple foto
+            if ($request->hasFile('foto_pengembalian')) {
+                foreach ($request->file('foto_pengembalian') as $file) {
+                    $path = $file->store('uploads/pengembalian', 'public');
+                    FotoPengembalian::create([
+                        'id_peminjaman' => $peminjaman->id_peminjaman,
+                        'foto' => $path,
+                        'keterangan' => 'Pengembalian sebagian'
+                    ]);
+                }
+            }
+
+            $barang = Barang::findOrFail($peminjaman->id_barang);
+            $peminjaman->jumlah -= $jumlahKembalikan;
+            $barang->stok += $jumlahKembalikan;
+            $barang->save();
+
+            if ($peminjaman->jumlah <= 0) {
+                $jumlahAwal = session($sessionKey, $jumlahKembalikan);
+                $peminjaman->jumlah = $jumlahAwal;
+                $tanggalKembali = now();
+                $peminjaman->tanggal_kembali = $tanggalKembali;
+
+                if ($tanggalKembali > $peminjaman->tanggal_pengembalian) {
+                    $peminjaman->status = 'Telat';
+                } else {
+                    $peminjaman->status = 'Dikembalikan';
+                }
+                session()->forget($sessionKey);
+            } else {
+                $peminjaman->status = 'Dikembalikan Sebagian';
+            }
+
+            $peminjaman->save();
+
+            DB::commit();
+
+            $mahasiswa = $peminjaman->mahasiswa;
+            $peminjamanAll = Peminjaman::with('barang')
+                ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
+                ->where('status', '!=', 'Dikembalikan')
+                ->where('status', '!=', 'Telat')
+                ->get();
+
+            return redirect()->route('peminjaman.kembalikanForm', [
+                'nama_mahasiswa' => $mahasiswa->nama_mahasiswa,
+                'nim' => $mahasiswa->nim,
+            ])->with('success', 'Berhasil Mengembalikan Item');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal mengembalikan barang: ' . $e->getMessage());
         }
-
-        // Tambahkan ke stok barang
-        $barang = Barang::findOrFail($peminjaman->id_barang);
-        $barang->stok += $jumlahKembalikan;
-        $barang->save();
-
-        // Kurangi jumlah
-        $peminjaman->jumlah -= $jumlahKembalikan;
-
-        if ($peminjaman->jumlah <= 0) {
-            // Ambil jumlah awal
-            $jumlahAwal = session($sessionKey, $jumlahKembalikan); // fallback
-
-            // Reset jumlah ke awal hanya untuk keperluan rekapan
-            $peminjaman->jumlah = $jumlahAwal;
-            $peminjaman->status = 'Dikembalikan';
-            $peminjaman->tanggal_kembali = now();
-
-            // Hapus session
-            session()->forget($sessionKey);
-        } else {
-            $peminjaman->status = 'Dikembalikan Sebagian';
-        }
-
-        $peminjaman->save();
-
-        // Refresh data
-        $mahasiswa = $peminjaman->mahasiswa;
-        $peminjamanAll = Peminjaman::with('barang')
-            ->where('id_mahasiswa', $mahasiswa->id_mahasiswa)
-            ->where('status', '!=', 'Dikembalikan')
-            ->get();
-
-        return view('peminjaman.kembalikan', [
-            'peminjaman' => $peminjamanAll,
-            'mahasiswa' => $mahasiswa,
-        ])->with('success', 'Berhasil Mengembalikan Item');
     }
 
 
@@ -293,17 +358,23 @@ class PeminjamanController extends Controller
     {
         $query = Peminjaman::with(['mahasiswa', 'barang']);
 
-        // Filter status (opsional)
         if ($request->filled('filter_status')) {
             $query->where('status', $request->filter_status);
         }
 
-        // Filter rentang datetime
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tanggal_pinjam', [
                 $request->tanggal_mulai . ' 00:00:00',
                 $request->tanggal_selesai . ' 23:59:59'
             ]);
+        }
+
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('mahasiswa', function ($q) use ($searchTerm) {
+                $q->where('nama_mahasiswa', 'like', "%{$searchTerm}%")
+                    ->orWhere('nim', 'like', "%{$searchTerm}%");
+            });
         }
 
         $peminjaman = $query->orderBy('tanggal_pinjam', 'desc')->get();
@@ -333,12 +404,6 @@ class PeminjamanController extends Controller
 
         $peminjaman = $query->orderBy('tanggal_pinjam', 'desc')->get();
 
-        // Format tanggal saat ini (contoh: 2023-11-15)
-        $currentDate = now()->format('Y-m-d');
-
-        // Format alternatif jika ingin lebih detail (contoh: 20231115_1425)
-        // $currentDate = now()->format('Ymd_His');
-
         $pdf = Pdf::loadView('admin.peminjaman.pdf', [
             'peminjaman' => $peminjaman,
             'status_terpilih' => $request->filter_status ?? '',
@@ -346,10 +411,9 @@ class PeminjamanController extends Controller
             'tanggal_selesai' => $request->tanggal_selesai
         ])->setPaper('A4', 'landscape');
 
-        return $pdf->download("rekap_peminjaman_{$currentDate}.pdf");
+        return $pdf->download('rekap_peminjaman.pdf');
     }
 
-    // Tambah jumlah
     public function update(Request $request)
     {
         $id = $request->id_barang;
@@ -385,6 +449,7 @@ class PeminjamanController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
 
     public function deleteAll()
     {

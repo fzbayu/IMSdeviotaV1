@@ -11,7 +11,7 @@ class Peminjaman extends Model
 
     protected $table = 'peminjaman';
     protected $primaryKey = 'id_peminjaman';
-    protected $fillable = ['id_barang', 'id_mahasiswa', 'jumlah', 'tanggal_pinjam', 'tanggal_kembali', 'status'];
+    protected $fillable = ['id_barang', 'id_mahasiswa', 'jumlah', 'tanggal_pinjam', 'tanggal_pengembalian', 'tanggal_kembali', 'status', 'foto_pengembalian'];
     public $timestamps = false;
 
     public function barang()
@@ -23,5 +23,8 @@ class Peminjaman extends Model
     {
         return $this->belongsTo(Mahasiswa::class, 'id_mahasiswa', 'id_mahasiswa');
     }
-    
+    public function fotoPengembalian()
+    {
+        return $this->hasMany(FotoPengembalian::class, 'id_peminjaman');
+    }
 }

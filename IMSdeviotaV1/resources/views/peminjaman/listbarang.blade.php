@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-@vite(['resources/css/listbarang.css', 'resources/js/listbarang.js'])
+    @vite(['resources/css/listbarang.css', 'resources/js/listbarang.js'])
     <meta charset="UTF-8">
     <title>List Barang</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset('js/session-timer.js') }}" defer></script>
     <style>
         * {
             margin: 0;
@@ -21,7 +24,7 @@
         }
 
         .header {
-            background: linear-gradient(to bottom, #6554C4,rgb(233, 216, 255));
+            background: linear-gradient(to bottom, #6554C4, rgb(233, 216, 255));
             color: white;
             padding: 20px 40px;
             display: flex;
@@ -64,12 +67,12 @@
         }
 
         .filter-bar select {
-            appearance: none; 
+            appearance: none;
             background-image: url("images/dropdown.png");
             background-repeat: no-repeat;
             background-position: right 12px center;
             background-size: 10px 6px;
-            padding-right: 20px; 
+            padding-right: 20px;
         }
 
         .search-wrapper {
@@ -79,7 +82,8 @@
 
         .search-wrapper input[type="text"] {
             width: 100%;
-            padding: 10px 40px 10px 15px; /* ruang untuk ikon di kanan */
+            padding: 10px 40px 10px 15px;
+            /* ruang untuk ikon di kanan */
             font-size: 16px;
         }
 
@@ -182,20 +186,25 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
-        
+
         .btn-home .btn-icon {
-            width: 21px; /* Kecilkan gambar sesuai kebutuhan */
-            height: 21px; /* Sesuaikan ukuran */
+            width: 21px;
+            /* Kecilkan gambar sesuai kebutuhan */
+            height: 21px;
+            /* Sesuaikan ukuran */
         }
 
         .btn-cart {
-            width: 21px; /* Kecilkan gambar sesuai kebutuhan */
-            height: 21px; /* Sesuaikan ukuran */
+            width: 21px;
+            /* Kecilkan gambar sesuai kebutuhan */
+            height: 21px;
+            /* Sesuaikan ukuran */
         }
 
         .button-group {
             display: flex;
-            gap: 10px; /* jarak antar tombol */
+            gap: 10px;
+            /* jarak antar tombol */
         }
 
         .section-title {
@@ -210,19 +219,24 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 30px;
             padding: 20px 60px 60px 60px;
+            align-items: stretch;
         }
 
 
         .barang {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
             background-color: #e5e5e5;
-            min-width: 250px; /* atau sesuai ukuran yang kamu mau */
+            min-width: 250px;
             flex-shrink: 0;
             padding: 15px;
             border-radius: 20px;
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.20);
             text-align: center;
         }
-        
+
         .produk-image {
             width: 150px;
             height: 150px;
@@ -230,7 +244,7 @@
             padding: 10px;
             background-color: white;
         }
-        
+
         .stok-display {
             text-align: center;
             padding: 2px;
@@ -251,7 +265,8 @@
             background: transparent;
             color: white;
             border: none;
-            font-size: 24px; /* Perbesar ukuran tombol */
+            font-size: 24px;
+            /* Perbesar ukuran tombol */
             font-weight: bold;
             cursor: pointer;
         }
@@ -263,6 +278,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- Header List Barang -->
@@ -276,6 +292,15 @@
         </div>
     </div>
 
+    @if(session()->has('login_mahasiswa'))
+    <meta name="session-start-id" content="{{ session('login_mahasiswa.php_session_id') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <div style="display: none;">
+        <span id="session-timer">01:00</span>
+    </div>
+    @endif
+
+
     <!-- Search bar dan filter -->
     <form method="GET" action="{{ route('listbarang') }}" class="filter-bar">
         <div class="search-wrapper">
@@ -285,33 +310,37 @@
         <select name="kategori">
             <option value="">Filter : Kategori</option>
             @foreach ($kategori as $k)
-                <option value="{{ $k->id_kategori }}" {{ request('kategori') == $k->id_kategori ? 'selected' : '' }}>
-                    {{ $k->nama_kategori }}
-                </option>
+            <option value="{{ $k->id_kategori }}" {{ request('kategori') == $k->id_kategori ? 'selected' : '' }}>
+                {{ $k->nama_kategori }}
+            </option>
             @endforeach
         </select>
         <button type="submit">Fillter</button>
     </form>
 
-    <!-- List barang -->
     <div class="produk-container">
         @foreach ($barang as $b)
-            <div class="barang" data-id="{{ $b->id_barang }}" data-stok="{{ $b->stok }}">
-                <h4>{{ $b->nama_barang }}</h4>
+        <div class="barang" data-id="{{ $b->id_barang }}" data-stok="{{ $b->stok }}">
+            <h4>
+                <a href="{{ route('peminjaman.detail', $b->id_barang) }}">{{ $b->nama_barang }}</a>
+            </h4>
+            <a href="{{ route('peminjaman.detail', $b->id_barang) }}">
                 @if($b->foto->count() > 0)
-                    <img class="produk-image" src="{{ asset('storage/' . $b->foto->first()->foto) }}" width="100">
+                <img class="produk-image" src="{{ asset('storage/' . $b->foto->first()->foto) }}" width="100">
                 @else
-                    <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+                <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
                 @endif
-                <p>Stok: <span class="stok-display">{{ $b->stok }}</span></p>
-                <div class="counter">
-                    <button class="kurang">-</button>
-                    <span class="jumlah">0</span>
-                    <button class="tambah">+</button>
-                </div>
+            </a>
+            <p>Stok: <span class="stok-display">{{ $b->stok }}</span></p>
+            <div class="counter">
+                <button class="kurang">-</button>
+                <span class="jumlah">0</span>
+                <button class="tambah">+</button>
             </div>
+        </div>
         @endforeach
     </div>
+
 
     <!-- Footer -->
     <div class="footer">
@@ -322,8 +351,11 @@
                 Pinjam: <span id="total-pinjam">0</span>
             </button>
         </form>
-    </div> 
+    </div>
 
-</div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    </div>
 </body>
+
 </html>

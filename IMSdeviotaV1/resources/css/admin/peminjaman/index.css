@@ -1,0 +1,344 @@
+/* Base Styles */
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+        color: #333;
+    }
+
+    /* Header Section */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        /* Mengatur agar konten tersebar di kiri dan kanan */
+        align-items: center;
+        padding: 20px 30px;
+        background: #fff;
+    }
+
+    h2 {
+        color: #7B1FA2;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    /* Main Filter and Action Container */
+    .main-action-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 15px 30px;
+        margin: 0 20px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Combined Filter Section */
+    .filter-section {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        color: #6a0dad;
+        white-space: nowrap;
+        font-size: 0.95rem;
+    }
+
+    .filter-group select,
+    .filter-group input[type="date"] {
+        background-color: #6a0dad;
+        color: #ffffff;
+        padding: 8px 12px;
+        border: 2px solid #6a0dad;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-group select:hover,
+    .filter-group input[type="date"]:hover {
+        background-color: #5c0b9e;
+    }
+
+    .filter-group input[type="date"] {
+        min-width: 150px;
+    }
+
+    /* Action Buttons Section */
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    /* Button Styles */
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .btn i {
+        margin-right: 6px;
+    }
+
+    .filter-btn {
+        background-color: #6a0dad;
+        color: white;
+    }
+
+    .export-btn {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .delete-btn {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .delete-btn:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .reset-link {
+        color: #dc3545;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        margin-left: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .reset-link:hover {
+        text-decoration: underline;
+        color: #b02a37;
+    }
+
+    /* Table Styles */
+    .table-container {
+        padding: 0 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    thead {
+        background-color: #7B1FA2;
+        color: white;
+    }
+
+    th {
+        padding: 14px 16px;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #555;
+    }
+
+    td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #555;
+    }
+
+    tbody tr:hover {
+        background-color: rgba(123, 31, 162, 0.1);
+    }
+
+    /* Row Selection */
+    .selected-row {
+        background-color: rgba(156, 137, 184, 0.3) !important;
+    }
+
+    /* Responsive table */
+    @media (max-width: 1200px) {
+        table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .foto-thumbs {
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 768px) {
+
+        td,
+        th {
+            padding: 8px 10px;
+            font-size: 0.9rem;
+        }
+
+        .foto-thumbs a img {
+            width: 50px;
+            height: 50px;
+        }
+    }
+
+    input[type="date"] {
+        color: white;
+        background-color: #6a0dad;
+        /* supaya kontras */
+        border: 1px solid #ccc;
+        padding: 6px;
+        border-radius: 4px;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+
+    /* Tombol Cari yang sesuai dengan warna tombol lainnya */
+    form button[type="submit"] {
+        padding: 8px 14px;
+        border-radius: 5px;
+        background-color: #6a0dad;
+        /* Warna yang sama dengan tombol lainnya */
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    form button[type="submit"]:hover {
+        background-color: #5c0b9e;
+        /* Efek hover */
+    }
+
+    /* Memberikan jarak antar form pencarian dan tombol */
+    form {
+        display: flex;
+        gap: 10px;
+        /* Memberikan jarak antara input dan tombol */
+        align-items: center;
+    }
+
+    /* Tambahkan di bagian style */
+    .foto-thumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        justify-content: center;
+    }
+
+    .foto-thumbs a {
+        transition: transform 0.2s;
+    }
+
+    .foto-thumbs a:hover {
+        transform: scale(1.05);
+    }
+
+    /* Modal untuk preview foto */
+    .modal-foto {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .modal-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
+    .modal-img {
+        max-width: 90%;
+        max-height: 90%;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .modal-nav {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        transform: translateY(-50%);
+    }
+
+    .modal-nav-btn.prev-btn,
+    .modal-nav-btn.next-btn {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.85);
+        /* warna putih semi-transparan */
+        color: black;
+        /* teks panah warna hitam agar kontras */
+        font-size: 30px;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        /* bayangan biar tetap kelihatan di background terang */
+        transition: transform 0.2s ease;
+    }
+
+    .modal-nav-btn.prev-btn:hover,
+    .modal-nav-btn.next-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .modal-nav-btn.prev-btn {
+        left: 20px;
+    }
+
+    .modal-nav-btn.next-btn {
+        right: 20px;
+    }
+
+    .foto-more-indicator {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .foto-more-indicator:hover {
+        background-color: rgba(0, 0, 0, 0.8) !important;
+        transform: scale(1.05);
+    }

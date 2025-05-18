@@ -17,15 +17,12 @@ class BarangController extends Controller
         try {
             DB::connection()->getPdo();
 
-            // Query dasar dengan eager loading
             $query = Barang::with(['kategori', 'foto']);
-            
-            // Filter berdasarkan kategori jika ada parameter
+
             if ($request->has('filter_kategori') && $request->filter_kategori != '') {
                 $query->where('id_kategori', $request->filter_kategori);
             }
-            
-            // Filter tambahan untuk stok (opsional)
+
             if ($request->has('filter_stok') && $request->filter_stok != '') {
                 if ($request->filter_stok == 'low') {
                     $query->whereColumn('stok', '<=', 'stok_minimum');
@@ -33,18 +30,25 @@ class BarangController extends Controller
                     $query->where('stok', 0);
                 }
             }
-            
-            // Eksekusi query
+
+            if ($request->filled('search')) {
+                $searchTerm = $request->search;
+                $query->where('nama_barang', 'like', "%{$searchTerm}%");
+            }
+
+
             $barang = $query->get();
             $barangMasuk = BarangMasuk::with('barang.kategori')->get();
             $kategoris = Kategori::all();
 
-            return view('adminDashboard.index', compact('barang', 'barangMasuk', 'kategoris'));
+            $barang_notif = Barang::whereColumn('stok', '<=', 'stok_minimum')->get();
 
+            return view('adminDashboard.index', compact('barang', 'barangMasuk', 'kategoris', 'barang_notif'));
         } catch (\Exception $e) {
-        
-            return redirect()->back()->with('error', 
-                'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.');
+            return redirect()->back()->with(
+                'error',
+                'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.'
+            );
         }
     }
 
@@ -56,22 +60,36 @@ class BarangController extends Controller
 
     public function add(Request $request)
     {
-        $request->validate([
-            'nama_barang' => 'required|string|max:150',
-            'id_kategori' => 'required|integer|exists:kategori,id_kategori',
-            'stok' => 'required|integer',
-            'lokasi' => 'nullable|string|max:100',
-            'deskripsi' => 'nullable|string',
-            'tipe' => 'required|in:Barang Dipinjam,Barang Diambil',
-            'stok_minimum' => 'nullable|integer',
-            'harga' => 'required|numeric',
-            'foto.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        $request->validate(
+            [
+                'nama_barang' => 'required|string|max:150',
+                'id_kategori' => 'required|integer|exists:kategori,id_kategori',
+                'stok' => 'required|integer',
+                'lokasi' => 'nullable|string|max:100',
+                'deskripsi' => 'nullable|string',
+                'tipe' => 'required|in:Barang Dipinjam,Barang Diambil,Barang Diambil dan Dipinjam',
+                'stok_minimum' => 'nullable|integer',
+                'harga' => 'required|numeric',
+                'foto.*' => 'image|mimes:jpeg,png,jpg,gif|max:500',
+            ],
+            [
+                'foto.*.max' => 'Ukuran foto tidak boleh lebih dari 500KB.',
+                'foto.*.image' => 'File yang diunggah harus berupa gambar.',
+                'foto.*.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
+            ]
+        );
 
         DB::beginTransaction();
         try {
             $barang = Barang::create($request->only([
-                'nama_barang', 'id_kategori', 'stok', 'lokasi', 'deskripsi', 'tipe', 'stok_minimum', 'harga'
+                'nama_barang',
+                'id_kategori',
+                'stok',
+                'lokasi',
+                'deskripsi',
+                'tipe',
+                'stok_minimum',
+                'harga'
             ]));
 
             BarangMasuk::create([
@@ -133,25 +151,39 @@ class BarangController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'nama_barang' => 'required|string|max:150',
-            'id_kategori' => 'required|integer|exists:kategori,id_kategori',
-            'stok' => 'required|integer',
-            'lokasi' => 'nullable|string|max:100',
-            'deskripsi' => 'nullable|string',
-            'tipe' => 'required|in:Barang Dipinjam,Barang Diambil',
-            'stok_minimum' => 'nullable|integer',
-            'harga' => 'required|numeric',
-            'foto_baru.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        $request->validate(
+            [
+                'nama_barang' => 'required|string|max:150',
+                'id_kategori' => 'required|integer|exists:kategori,id_kategori',
+                'stok' => 'required|integer',
+                'lokasi' => 'nullable|string|max:100',
+                'deskripsi' => 'nullable|string',
+                'tipe' => 'required|in:Barang Dipinjam,Barang Diambil,Barang Diambil dan Dipinjam',
+                'stok_minimum' => 'nullable|integer',
+                'harga' => 'required|numeric',
+                'foto.*' => 'image|mimes:jpeg,png,jpg,gif|max:500',
+            ],
+            [
+                'foto.*.max' => 'Ukuran foto tidak boleh lebih dari 500KB.',
+                'foto.*.image' => 'File yang diunggah harus berupa gambar.',
+                'foto.*.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
+            ]
+        );
 
         DB::beginTransaction();
         try {
             $barang = Barang::findOrFail($id);
-            $stokLama = $barang->stok; 
-            
+            $stokLama = $barang->stok;
+
             $barang->update($request->only([
-                'nama_barang', 'id_kategori', 'stok', 'lokasi', 'deskripsi', 'tipe', 'stok_minimum', 'harga'
+                'nama_barang',
+                'id_kategori',
+                'stok',
+                'lokasi',
+                'deskripsi',
+                'tipe',
+                'stok_minimum',
+                'harga'
             ]));
 
             if ($request->stok > $stokLama) {
@@ -162,8 +194,7 @@ class BarangController extends Controller
                     'tanggal_masuk' => now()
                 ]);
             }
-            
-            // Hapus foto yang dicentang
+
             if ($request->has('hapus_foto')) {
                 foreach ($request->hapus_foto as $fotoId) {
                     $foto = Foto::findOrFail($fotoId);
@@ -173,12 +204,11 @@ class BarangController extends Controller
                     $foto->delete();
                 }
             }
-            
-            // Tambah foto baru
-            if ($request->hasFile('foto_baru')) {
-                foreach ($request->file('foto_baru') as $file) {
+
+            if ($request->hasFile('foto')) {
+                foreach ($request->file('foto') as $file) {
                     $path = $file->store('uploads', 'public');
-                    
+
                     Foto::create([
                         'id_barang' => $barang->id_barang,
                         'foto' => $path
@@ -222,8 +252,8 @@ class BarangController extends Controller
     {
         $keyword = $request->keyword;
         $barang = Barang::with('kategori', 'foto')
-                    ->where('nama_barang', 'like', "%$keyword%")
-                    ->get();
+            ->where('nama_barang', 'like', "%$keyword%")
+            ->get();
 
         return view('welcome', compact('barang'));
     }
@@ -231,6 +261,13 @@ class BarangController extends Controller
     public function show($id)
     {
         $barang = Barang::with(['kategori', 'foto'])->findOrFail($id);
+
+        // if ($request->filled('search')) {
+        //     $searchTerm = $request->search;
+        //     $query->whereHas('barang', function ($q) use ($searchTerm) {
+        //         $q->where('nama_barang', 'like', "%{$searchTerm}%");
+        //     });
+        // }
         return view('barang.show', compact('barang'));
     }
 
@@ -241,4 +278,15 @@ class BarangController extends Controller
         return view('barang.notifikasi', compact('barang_notif'));
     }
 
+    public function show_detail_pengambilan($id)
+    {
+        $barang = Barang::with(['kategori', 'foto'])->findOrFail($id);
+        return view('pengambilan.detail', compact('barang'));
+    }
+
+    public function show_detail_peminjaman($id)
+    {
+        $barang = Barang::with(['kategori', 'foto'])->findOrFail($id);
+        return view('peminjaman.detail', compact('barang'));
+    }
 }

@@ -28,10 +28,9 @@ class PengambilanController extends Controller
         $kategori = Kategori::all();
 
         $query = Barang::with('kategori')
-                    ->where([
-                        ['tipe', '=', 'Barang Diambil'],
-                        ['stok', '>', 0]
-                    ]);
+            ->whereIn('tipe', ['Barang Diambil', 'Barang Diambil dan Dipinjam'])
+            ->where('stok', '>', 0);
+
 
         if ($request->filled('search')) {
             $query->where('nama_barang', 'like', '%' . $request->search . '%');
@@ -42,12 +41,11 @@ class PengambilanController extends Controller
                 ['id_kategori', '=', $request->kategori],
                 ['tipe', '=', 'Barang Diambil'], // pastikan tipe juga "Barang Diambil"
             ]);
-        }        
+        }
 
         $barang = $query->get();
 
         return view('pengambilan.listbarang2', compact('barang', 'kategori'));
-        
     }
 
 
@@ -55,11 +53,11 @@ class PengambilanController extends Controller
     {
         $cart = json_decode($request->input('cart'), true);
         session(['cart' => $cart]);
-    
+
         // Ambil data barang dari database untuk ditampilkan di create
         $barangIds = collect($cart)->pluck('id_barang');
         $barang = Barang::whereIn('id_barang', $barangIds)->get();
-    
+
         // Gabungkan dengan jumlah
         $barangWithQty = $barang->map(function ($barang) use ($cart) {
             $qty = collect($cart)->firstWhere('id_barang', $barang->id_barang)['jumlah'];
@@ -68,66 +66,78 @@ class PengambilanController extends Controller
                 'jumlah' => $qty
             ];
         });
-    
+
         return view('pengambilan.create', compact('barangWithQty'));
     }
-    
+
     public function submitPengambilan(Request $request)
-{
-    $validated = $request->validate([
-        'nim' => 'required',
-        'nama' => 'required',
-        'kontak' => 'required',
-    ]);
-
-    $cart = session('cart', []);
-
-    // Cari berdasarkan NIM
-    $mahasiswa = Mahasiswa::where('nim', $validated['nim'])->first();
-
-    if ($mahasiswa) {
-        // Jika nama tidak cocok, tampilkan notifikasi error
-        if (strtolower(trim($mahasiswa->nama_mahasiswa)) !== strtolower(trim($validated['nama']))) {
-            return redirect()->back()
-                ->with('error', 'NIM sudah terdaftar, silahkan input dengan nama yang sama.')
-                ->withInput();
-        }
-
-        // Update kontak jika perlu
-        $mahasiswa->kontak = $validated['kontak'];
-        $mahasiswa->save();
-    } else {
-        // Insert mahasiswa baru
-        $mahasiswa = Mahasiswa::create([
-            'nim' => $validated['nim'],
-            'nama_mahasiswa' => $validated['nama'],
-            'kontak' => $validated['kontak'],
-        ]);
-    }
-
-    // Proses pengambilan
-    foreach ($cart as $item) {
-        $barang = Barang::find($item['id_barang']);
-        if (!$barang || $barang->stok < $item['jumlah']) {
-            return back()->withErrors(['stok' => 'Stok tidak mencukupi untuk salah satu barang.'])->withInput();
-        }
-
-        Pengambilan::create([
-            'id_mahasiswa' => $mahasiswa->id_mahasiswa,
-            'id_barang' => $item['id_barang'],
-            'jumlah' => $item['jumlah'],
-            'tanggal_pinjam' => now(),
-            'status' => 'Dipinjam',
+    {
+        $validated = $request->validate([
+            'kontak' => 'required',
         ]);
 
-        $barang->stok -= $item['jumlah'];
-        $barang->save();
+        // Ambil data mahasiswa dari session login
+        $loginData = session('login_mahasiswa');
+        $nim = $loginData['nim'] ?? null;
+        $nama = $loginData['nama'] ?? null;
+
+        // Pastikan nim dan nama ada di session
+        if (!$nim || !$nama) {
+            return redirect()->route('login.form')->with('error', 'Sesi login tidak ditemukan. Silakan login kembali.');
+        }
+
+        // Cari berdasarkan NIM
+        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
+
+        if ($mahasiswa) {
+            // Jika nama tidak cocok, tampilkan notifikasi error
+            if (strtolower(trim($mahasiswa->nama_mahasiswa)) !== strtolower(trim($nama))) {
+                return redirect()->back()
+                    ->with('error', 'NIM sudah terdaftar, silahkan input dengan nama yang sama.')
+                    ->withInput();
+            }
+
+            // Update kontak jika perlu
+            $mahasiswa->kontak = $validated['kontak'];
+            $mahasiswa->save();
+        } else {
+            // Insert mahasiswa baru jika belum ada
+            $mahasiswa = Mahasiswa::create([
+                'nim' => $nim,
+                'nama_mahasiswa' => $nama,
+                'kontak' => $validated['kontak'],
+            ]);
+        }
+
+        // Proses pengambilan barang dari keranjang
+        $cart = session('cart', []);
+
+        foreach ($cart as $item) {
+            $barang = Barang::find($item['id_barang']);
+            if (!$barang || $barang->stok < $item['jumlah']) {
+                return back()->withErrors(['stok' => 'Stok tidak mencukupi untuk salah satu barang.'])->withInput();
+            }
+
+            // Simpan data pengambilan
+            Pengambilan::create([
+                'id_mahasiswa' => $mahasiswa->id_mahasiswa,
+                'id_barang' => $item['id_barang'],
+                'jumlah' => $item['jumlah'],
+                'tanggal_pinjam' => now(),
+                'status' => 'Dipinjam',
+            ]);
+
+            // Kurangi stok barang
+            $barang->stok -= $item['jumlah'];
+            $barang->save();
+        }
+
+        // Kosongkan cart setelah pengambilan
+        session()->forget('cart');
+
+        return redirect()->route('keranjang2')->with('success', 'Pengambilan berhasil!');
     }
 
-    session()->forget('cart');
-
-    return redirect()->route('keranjang2')->with('success', 'Pengambilan berhasil!');
-}
 
     /*public function store(Request $request)
     {
@@ -171,7 +181,7 @@ class PengambilanController extends Controller
         return redirect()->route('welcome')->with('success', 'pengambilan berhasil ditambahkan.');
     }*/
 
-    public function show_riwayat_pengambilan(Request $request) 
+    public function show_riwayat_pengambilan(Request $request)
     {
         $query = Pengambilan::with(['mahasiswa', 'barang']);
 
@@ -180,6 +190,14 @@ class PengambilanController extends Controller
                 $request->tanggal_mulai . ' 00:00:00',
                 $request->tanggal_selesai . ' 23:59:59'
             ]);
+        }
+
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('mahasiswa', function ($q) use ($searchTerm) {
+                $q->where('nama_mahasiswa', 'like', "%{$searchTerm}%")
+                    ->orWhere('nim', 'like', "%{$searchTerm}%");
+            });
         }
 
         $pengambilan = $query->orderBy('tanggal_ambil', 'desc')->get();
@@ -224,5 +242,4 @@ class PengambilanController extends Controller
         Pengambilan::whereIn('id_pengambilan', $request->ids)->delete();
         return response()->json(['success' => true]);
     }
-
 }

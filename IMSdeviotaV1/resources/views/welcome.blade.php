@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Management System Deviota</title>  
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="{{ asset('js/session-timer.js') }}" defer></script>
 
     <style>
         * {
@@ -245,6 +248,82 @@
             object-fit: cover;
         }
 
+        /* Session Info Styles */
+        .session-info {
+            background-color: #e5e5f7;
+            border: 1px solid #d1d1f0;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 20px auto;
+            max-width: 1500px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .session-details {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .user-info p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .user-info .name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .timer-container {
+            background-color: #f5f5ff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #d1d1f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .timer-icon {
+            color: #6554C4;
+        }
+        
+        #session-timer {
+            font-weight: 600;
+            color: #6554C4;
+        }
+        
+        .logout-button {
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .logout-button:hover {
+            background-color: #ff3838;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -252,31 +331,44 @@
     <div class="header">
         <img class="logo" src="{{ asset('images/logo.png') }}" alt="Logo">
         <h1>INVENTORY MANAGEMENT <br> SYSTEM DEVIOTA</h1>
-        <a href="{{ route('admin.login') }}" class="login-btn">
-            <img src="{{ asset('images/user.png') }}" alt="icon" class="btn-icon"> Admin Login
-        </a>    
-    </div>
         
-    <!-- Peraturan -->
+        @if(session()->has('login_mahasiswa'))
+            <!-- Jika sudah login, tampilkan username -->
+            <a href="{{ route('logout') }}" class="login-btn">
+                <img src="{{ asset('images/user.png') }}" alt="icon" class="btn-icon"> Logout
+            </a>
+        @else
+            <!-- Jika belum login, tampilkan login -->
+            <a href="{{ route('barang.index') }}" class="login-btn">
+                <img src="{{ asset('images/user.png') }}" alt="icon" class="btn-icon"> Admin Dashboard
+            </a>
+        @endif
+        
+    </div>
+
+    <!-- Session Info -->
+    @if(session()->has('login_mahasiswa'))
+        <div class="session-info">
+            <div class="session-details">
+                <div class="user-info">
+                    <p class="name">{{ session('login_mahasiswa.nama') }}</p>
+                    <p>NIM: {{ session('login_mahasiswa.nim') }}</p>
+                    <p>Login: {{ \Carbon\Carbon::parse(session('login_mahasiswa.login_time'))->format('d M Y, H:i') }}</p>
+                </div>
+            </div>
+            <div class="session-actions">
+                <div class="timer-container">
+                    <span class="timer-icon">⏱️</span>
+                    <span>Sesi berakhir dalam: <span id="session-timer">01:00</span></span>
+                </div>
+                <a href="{{ route('logout') }}" class="logout-button">Logout</a>
+            </div>
+        </div>
+    @endif
+            
+        
+    <!-- List Produk -->
     <div class="container">
-    <h2 class="section-title">PERATURAN</h2>
-    <div class="peraturan" style="line-height: 1.3; margin-top: 10px;">
-        <ol style="padding-left: 20px; margin: 0;">
-            <li style="margin-bottom: 2px;">Setiap peminjaman barang wajib mengisi form pengambilan dengan data yang valid dan sesuai identitas.</li>
-            <li style="margin-bottom: 2px;">Barang harus diambil sendiri oleh peminjam yang terdaftar, tidak boleh diwakilkan.</li>
-            <li style="margin-bottom: 2px;">Peminjam bertanggung jawab penuh atas kerusakan atau kehilangan barang selama masa peminjaman.</li>
-            <li style="margin-bottom: 2px;">Barang harus dikembalikan dalam kondisi baik tanpa kerusakan sesuai dengan keadaan saat dipinjam.</li>
-            <li style="margin-bottom: 2px;">Pengembalian barang wajib dilakukan tepat waktu sesuai tanggal yang disepakati. Keterlambatan pengembalian dikenakan sanksi.</li>
-            <li style="margin-bottom: 2px;">Dilarang memodifikasi, memperbaiki, atau membongkar barang tanpa izin petugas.</li>
-            <li style="margin-bottom: 2px;">Jika terjadi kerusakan atau masalah teknis selama peminjaman, segera hubungi admin untuk penanganan.</li>
-            <li style="margin-bottom: 2px;">Peminjam wajib menjaga kebersihan dan keutuhan barang selama masa peminjaman.</li>
-            <li style="margin-bottom: 2px;">Setiap pelanggaran terhadap peraturan ini dapat dikenakan sanksi berupa denda atau pembatasan hak peminjaman.</li>
-            <li>Data yang diinputkan harus sesuai dengan barang yang dipinjam. Ketidaksesuaian data dapat membatalkan peminjaman.</li>
-        </ol>
-    </div>
-</div>
-        
-        <!-- List Produk -->
         <h2 class="section-title">PRODUK</h2>
         <div class="produk-container">
             @foreach($barang->take(20) as $item)
@@ -294,9 +386,9 @@
             @endforeach
         </div>
 
-        <!-- Actions  -->
+        <!-- Actions -->
         <div class="action-buttons">
-            <a href="{{ url('/peminjaman/kembalikan') }}" class="btn btn-green">
+            <a href="{{ route('peminjaman.kembalikanForm') }}" class="btn btn-green">
                 Kembalikan Barang
             </a>
             <a href="{{ url('/listbarang2') }}" class="btn btn-green">
@@ -306,36 +398,37 @@
                 <span>+</span> Pinjam Barang
             </a>
         </div>
-
     </div>
 
     <!-- Footer -->
     <div class="footer">
-            <div>
-                <div class="footer-logo">
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo">
-                    <span>DEVIOTA</span>
-                </div>
-                <br>
-                <p class="footer-text">We lead in Industry 4.0 technology, specializing in IoT, Big Data, Smart Systems, Machine Learning AI, Cloud Computing, and more. Committed to innovation, we deliver intelligent, customizable technology solutions tailored to our clients’ unique needs.</p>
+        <div>
+            <div class="footer-logo">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo">
+                <span>DEVIOTA</span>
             </div>
-            <div>
-                <button class="contact-us-btn">
-                    <img src="images/phone.png" alt="icon" class="btn-icon">
-                    <a href="https://wa.me/6281322808849" target="_blank" class="contact-us-btn">
-                        Contact Us
-                    </a>
-                </button>
-                <br>
-                <div class="contact-info">
-                    <p><strong>Kontak</strong></p>
-                    <p>Admin : 0813-2280-8849</p><br>
-                    <p><strong>Lokasi</strong></p>
-                    <p>Jl. Zamrud XX No.195E, <br>
-                         Ciwaruga, Kec. Parongpong, <br>
-                         Kota Bandung, Jawa Barat 40559</p>
-                </div>
+            <br>
+            <p class="footer-text">We lead in Industry 4.0 technology, specializing in IoT, Big Data, Smart Systems, Machine Learning AI, Cloud Computing, and more. Committed to innovation, we deliver intelligent, customizable technology solutions tailored to our clients' unique needs.</p>
+        </div>
+        <div>
+            <button class="contact-us-btn">
+                <img src="images/phone.png" alt="icon" class="btn-icon">
+                <a href="https://wa.me/6281322808849" target="_blank" class="contact-us-btn">
+                    Contact Us
+                </a>
+            </button>
+            <br>
+            <div class="contact-info">
+                <p><strong>Kontak</strong></p>
+                <p>Admin : 0813-2280-8849</p><br>
+                <p><strong>Lokasi</strong></p>
+                <p>Jl. Zamrud XX No.195E, <br>
+                    Ciwaruga, Kec. Parongpong, <br>
+                    Kota Bandung, Jawa Barat 40559</p>
             </div>
         </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </body>
 </html>

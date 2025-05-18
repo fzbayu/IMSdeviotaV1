@@ -14,8 +14,8 @@
         text-align: center;
     }
 
-    form {
-        background: #fff;
+    .form-tambah-produk {
+        /* background: #fff; */
         padding: 30px 60px;
         border-radius: 10px;
         max-width: 1100px;
@@ -123,13 +123,15 @@
     }
 
     #kategori-modal {
-        display: none; /* Modal tersembunyi secara default */
+        display: none;
+        /* Modal tersembunyi secara default */
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5); /* Latar belakang semi transparan */
+        background: rgba(0, 0, 0, 0.5);
+        /* Latar belakang semi transparan */
         justify-content: center;
         align-items: center;
         z-index: 1000;
@@ -149,7 +151,7 @@
     }
 
     #kategori-modal form {
-        background: white;
+        /* background: white; */
         padding: 20px;
         border-radius: 10px;
         max-width: 400px;
@@ -167,15 +169,16 @@
     #kategori-modal button[type="submit"] {
         background-color: #7B1FA2;
         color: white;
-        padding: 10px 15px;
+        padding: 5px 15px;
         border: none;
         border-radius: 5px;
         cursor: pointer;
     }
+
     #kategori-modal button#batal-btn {
         background-color: #ccc;
         color: black;
-        padding: 10px 15px;
+        padding: 20px 15px;
         border: none;
         border-radius: 5px;
         cursor: pointer;
@@ -211,13 +214,35 @@
     }
 
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-modal {
+        max-width: 400px;
+        margin: auto;
+        padding: 20px;
+        border-radius: 12px;
+        background-color: #f9f9f9;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-modal label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
     }
 
     .form-modal input[type="text"] {
         padding: 12px 15px;
-        margin: 10px 0;
+        margin-bottom: 15px;
         border-radius: 10px;
         border: 1px solid #ddd;
         font-size: 14px;
@@ -225,21 +250,102 @@
         box-sizing: border-box;
     }
 
-    .form-modal button {
+    .form-modal input[type="hidden"] {
+        display: none;
+    }
+
+    .form-modal .button-group {
+        display: flex;
+        gap: 10px;
         margin-top: 20px;
-        background: #7e22ce;
-        color: white;
-        border: none;
+    }
+
+    .form-modal button {
+        flex: 1;
         padding: 12px 20px;
+        border: none;
         border-radius: 25px;
         font-size: 14px;
         font-weight: bold;
         cursor: pointer;
-        width: 100%;
     }
 
-    .form-modal button:hover {
+    .form-modal button[type="submit"] {
+        background: #7e22ce;
+        color: white;
+    }
+
+    .form-modal button[type="submit"]:hover {
         background: #5e17a7;
+    }
+
+    .form-modal button#batal-btn {
+        /* background: #ccc; */
+        color: black;
+    }
+
+
+    /* Untuk Notifikasi */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+    }
+
+    .popup-success,
+    .popup-error {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        border-radius: 8px;
+        z-index: 1000;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        min-width: 300px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .popup-success {
+        background-color: #e8f5e9;
+        border: 1px solid #4caf50;
+        color: #2e7d32;
+        display: none;
+    }
+
+    .popup-error {
+        background-color: #ffebee;
+        border: 1px solid #f44336;
+        color: #c62828;
+        display: none;
+    }
+
+    .popup-visible {
+        opacity: 1;
+        display: block;
+    }
+
+    .popup-success button,
+    .popup-error button {
+        background-color: #2196f3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .popup-success button:hover,
+    .popup-error button:hover {
+        background-color: #0d8bf2;
     }
 </style>
 
@@ -251,7 +357,97 @@
 
 <h2>TAMBAH PRODUK</h2>
 
-<form action="{{ route('barang.add') }}" method="POST" enctype="multipart/form-data">
+<!-- Notifikasi Sukses -->
+@if (session('success'))
+<div class="overlay" id="popupOverlay"></div>
+<div class="popup-success" id="popupSuccess">
+    <p>{{ session('success') }} ✅</p>
+    <button onclick="closeSuccess()">Ok</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('popupSuccess');
+        const overlay = document.getElementById('popupOverlay');
+
+        // Show popup and overlay
+        if (popup) {
+            overlay.style.display = 'block';
+            popup.style.display = 'block';
+
+            // Small delay to ensure display is applied before adding visible class
+            setTimeout(() => {
+                popup.classList.add('popup-visible');
+            }, 10);
+        }
+    });
+
+    function closeSuccess() {
+        const popup = document.getElementById('popupSuccess');
+        const overlay = document.getElementById('popupOverlay');
+
+        // Fade out
+        if (popup) popup.classList.remove('popup-visible');
+
+        // Allow time for fade animation before hiding
+        setTimeout(() => {
+            if (popup) popup.style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+        }, 300);
+    }
+
+    setTimeout(() => {
+        closeSuccess();
+    }, 5000);
+</script>
+@endif
+
+@if ($errors->any())
+<div class="overlay" id="popupOverlay"></div>
+<div class="popup-error" id="popupError">
+    <p>{{ $errors->first() }}</p>
+    <button onclick="closePopup()">Ok</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const errorPopup = document.getElementById('popupError');
+        const overlay = document.getElementById('popupOverlay');
+
+        // Show popup and overlay
+        if (errorPopup) {
+            overlay.style.display = 'block';
+            errorPopup.style.display = 'block';
+
+            // Small delay to ensure display is applied before adding visible class
+            setTimeout(() => {
+                errorPopup.classList.add('popup-visible');
+            }, 10);
+        }
+    });
+
+    function closePopup() {
+        const errorPopup = document.getElementById('popupError');
+        const overlay = document.getElementById('popupOverlay');
+
+        // Fade out
+        if (errorPopup) errorPopup.classList.remove('popup-visible');
+
+        // Allow time for fade animation before hiding
+        setTimeout(() => {
+            if (errorPopup) errorPopup.style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+        }, 300);
+    }
+
+    // Auto-close after 5 seconds
+    setTimeout(() => {
+        closePopup();
+    }, 5000);
+</script>
+@endif
+
+<form action="{{ route('barang.add') }}" method="POST" enctype="multipart/form-data" class="form-tambah-produk">
     @csrf
 
     <label>Nama Barang:</label>
@@ -262,7 +458,7 @@
             <label>Kategori:</label>
             <select name="id_kategori" id="kategori-select" required>
                 @foreach($kategoris as $kategori)
-                    <option value="{{ $kategori->id_kategori }}">{{ $kategori->nama_kategori }}</option>
+                <option value="{{ $kategori->id_kategori }}">{{ $kategori->nama_kategori }}</option>
                 @endforeach
             </select>
         </div>
@@ -282,6 +478,7 @@
     <select name="tipe">
         <option value="Barang Dipinjam">Barang Dipinjam</option>
         <option value="Barang Diambil">Barang Diambil</option>
+        <option value="Barang Diambil dan Dipinjam">Barang Diambil dan Dipinjam</option>
     </select>
 
     <label>Stok Minimum:</label>
@@ -290,9 +487,9 @@
     <label>Harga:</label>
     <input type="number" step="0.01" name="harga" required>
 
-    <label>Foto Barang:</label>
+    <label>Foto Barang: </label>
     <div id="drop-area">
-        <p>SELECT OR DROP PICTURES HERE</p>
+        <p>SELECT OR DROP PICTURES HERE (MAX 500 Kb)</p>
         <input type="file" id="fileElem" name="foto[]" accept="image/*" multiple>
     </div>
     <div id="preview"></div>
@@ -303,20 +500,22 @@
 <div id="kategori-modal">
     <div id="kategori-modal-content">
         <span id="close-modal">&times;</span>
-        <h3>Tambah Kategori Baru</h3>
-        
-        <!-- Form untuk tambah kategori -->
+        <h3 style="text-align: center;"><b>Tambah Kategori Baru<b></h3>
+
         <form action="{{ route('barang.tambahKategori') }}" method="POST" class="form-modal">
             @csrf
-            <label>Nama Kategori:</label>
-            <input type="text" name="nama_kategori" required>
+
+            <label for="nama_kategori">Nama Kategori:</label>
+            <input type="text" id="nama_kategori" name="nama_kategori" required>
 
             <input type="hidden" name="redirect" value="formTambah">
 
-            <button type="submit">Simpan Kategori</button>
-            <!-- Tombol Batal -->
-            <button type="button" id="batal-btn" style="background: #ccc; color: black; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">Batal</button>
+            <div class="button-group">
+                <button style="background-color: #7e22ce; color: white;">Simpan Kategori</button>
+                <button id="batal-btn">Batal</button>
+            </div>
         </form>
+
     </div>
 </div>
 

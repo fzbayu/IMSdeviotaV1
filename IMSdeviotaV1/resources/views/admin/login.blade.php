@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="login-container">
-        <button class="back-button" onclick="window.location.href='/'">
+        <button class="back-button" onclick="window.location.href='/login'">
             <i class="fa fa-arrow-left"></i>
         </button>
         <img src="{{ Vite::asset('resources/images/logo.png') }}" alt="Logo">

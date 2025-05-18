@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-@vite(['resources/css/listbarang.css', 'resources/js/listbarang.js'])
+    @vite(['resources/css/listbarang.css', 'resources/js/listbarang.js'])
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset('js/session-timer.js') }}" defer></script>
     <style>
-
         /* Semua */
         * {
             margin: 0;
@@ -19,7 +21,7 @@
 
         /* Header */
         .header {
-            background: linear-gradient(to bottom, #6554C4,rgb(233, 216, 255));
+            background: linear-gradient(to bottom, #6554C4, rgb(233, 216, 255));
             color: white;
             padding: 20px 40px;
             display: flex;
@@ -38,6 +40,7 @@
             transition: background 0.3s ease;
             text-decoration: none;
         }
+
         .btn-home {
             background-color: #6554C4;
             color: white;
@@ -47,44 +50,49 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
+
         .btn-home .btn-icon {
-            width: 21px; 
-            height: 21px; 
+            width: 21px;
+            height: 21px;
         }
-        
+
         .btn-trash {
-            max-width: 30px;      
-            max-height: 30px;     
-            object-fit: contain;  
-            cursor: pointer;      
+            max-width: 30px;
+            max-height: 30px;
+            object-fit: contain;
+            cursor: pointer;
             padding-right: 10px;
         }
 
         .button-group {
             display: flex;
-            gap: 10px; /* jarak antar tombol */
+            gap: 10px;
+            /* jarak antar tombol */
         }
+
         .container {
             display: flex;
             padding: 20px;
             gap: 40px;
         }
 
-        .left, .right {
+        .left,
+        .right {
             flex: 1;
         }
 
         .item-card {
             background: #eee;
             padding: 12px;
-            margin: 0 auto 25px auto;   /* auto kiri-kanan agar center */
+            margin: 0 auto 25px auto;
+            /* auto kiri-kanan agar center */
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-            max-width: 700px;           
-            width: 100%;                
+            max-width: 700px;
+            width: 100%;
         }
 
         .item-card img {
@@ -96,11 +104,11 @@
         .item-info {
             flex: 1;
             display: flex;
-            flex-direction: column;    
-            align-items: center;       
-            justify-content: center;   
-            text-align: center;        
-            gap: 10px;                 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 10px;
         }
 
         .counter {
@@ -150,7 +158,8 @@
         }
 
         .form-group {
-            flex: 1; /* biar kolom seimbang */
+            flex: 1;
+            /* biar kolom seimbang */
             display: flex;
             flex-direction: column;
         }
@@ -194,7 +203,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5); /* efek gelap */
+            background-color: rgba(0, 0, 0, 0.5);
+            /* efek gelap */
             z-index: 999;
         }
 
@@ -228,14 +238,15 @@
 
     <!-- Buat Total Items -->
     <?php
-        $totalItems = 0;
-        foreach ($barangWithQty as $item) {
-            $totalItems += $item['jumlah']; 
-        }
+    $totalItems = 0;
+    foreach ($barangWithQty as $item) {
+        $totalItems += $item['jumlah'];
+    }
     ?>
 </head>
+
 <body>
-    
+
     <!-- Header Keranjang -->
     <div class="header">
         <h1>KERANJANG</h1>
@@ -250,10 +261,10 @@
     <!-- Notifikasi Sukses -->
     @if (session('success'))
     <div class="overlay" id="popupOverlay"></div>
-        <div class="popup-success" id="popupSuccess">
-            <p>{{ session('success') }} ✅</p>
-            <button onclick="closeSuccess()">Ok</button>
-        </div>
+    <div class="popup-success" id="popupSuccess">
+        <p>{{ session('success') }} ✅</p>
+        <button onclick="closeSuccess()">Ok</button>
+    </div>
 
     <script>
         function closeSuccess() {
@@ -261,7 +272,7 @@
             const overlay = document.getElementById('popupOverlay');
             if (popup) popup.style.display = 'none';
             if (overlay) overlay.style.display = 'none';
-            
+
             // Redirect to home after closing the popup
             window.location.href = "{{ route('welcome') }}";
         }
@@ -272,7 +283,15 @@
         }, 10000); // 10 detik
     </script>
     @endif
-    
+
+    @if(session()->has('login_mahasiswa'))
+    <meta name="session-start-id" content="{{ session('login_mahasiswa.php_session_id') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <div style="display: none;">
+        <span id="session-timer">01:00</span>
+    </div>
+    @endif
+
     <!-- Notifikasi NIM sudah terdaftar -->
     @if (session('error'))
     <div class="overlay" id="popupOverlay"></div>
@@ -294,15 +313,15 @@
     <!-- List Barang yang dipinjam dan Form -->
     <form action="{{ route('submit.pengambilan') }}" method="POST">
         @csrf
-            <div class="container">
+        <div class="container">
             <div class="left">
-            @foreach ($barangWithQty as $item)
+                @foreach ($barangWithQty as $item)
                 @php $barang = $item['barang']; @endphp
                 <div class="item-card">
                     @if($barang->foto->count() > 0)
-                        <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
+                    <img class="produk-image" src="{{ asset('storage/' . $barang->foto->first()->foto) }}" width="100">
                     @else
-                        <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
+                    <img class="produk-image" src="{{ asset('images/no-image.png') }}" width="100">
                     @endif
 
                     <div class="item-info">
@@ -318,23 +337,12 @@
                         <img src="{{ asset('images/trash.png') }}" class="btn-trash">
                     </div>
                 </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
 
-                <div class="right">
-                    <h1 style="color:#65558F">TOTAL : <span><?php echo $totalItems; ?> ITEM</span></h1><br>
-                    <form action="proses_peminjaman.php" method="POST">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nim">NIM</label>
-                            <input type="text" name="nim" id="nim" placeholder="NIM" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="nama">Nama</label>
-                            <input type="text" name="nama" id="nama" placeholder="Nama" required>
-                        </div>
-                    </div>
-
+            <div class="right">
+                <h1 style="color:#65558F">TOTAL : <span><?php echo $totalItems; ?> ITEM</span></h1><br>
+                <form action="proses_peminjaman.php" method="POST">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="kontak">Kontak</label>
@@ -342,12 +350,13 @@
                         </div>
                         <input type="hidden" name="tanggal_ambil" value="{{ \Carbon\Carbon::now()->toDateString() }}">
                     </div>
-                        <button type="submit" class="submit-btn">AMBIL BARANG</button>
-                    </form>
-
-                </div>
+                    <button type="submit" class="submit-btn">AMBIL BARANG</button>
+                </form>
 
             </div>
-        </form>
+
+        </div>
+    </form>
 </body>
+
 </html>
